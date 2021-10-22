@@ -1,0 +1,288 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="manifestAppName" xml:space="preserve">
+    <value>Weź pigułkę</value>
+  </data>
+  <data name="uiEdit.Text" xml:space="preserve">
+    <value>Zmiana</value>
+  </data>
+  <data name="uiMainAdd.Label" xml:space="preserve">
+    <value>Dodaj</value>
+  </data>
+  <data name="uiMainTitle.Text" xml:space="preserve">
+    <value>Weź pigułkę</value>
+  </data>
+  <data name="uiSettings.Label" xml:space="preserve">
+    <value>Ustawienia</value>
+  </data>
+  <data name="uiSettTitle.Text" xml:space="preserve">
+    <value>Ustawienia</value>
+  </data>
+  <data name="_lang" xml:space="preserve">
+    <value>PL</value>
+  </data>
+  <data name="uiAddZestawTitle.Text" xml:space="preserve">
+    <value>Dodawanie zestawu leków</value>
+  </data>
+  <data name="uiNazwaZestawu.Header" xml:space="preserve">
+    <value>Nazwa zestawu</value>
+  </data>
+  <data name="uiAllSame.OffContent" xml:space="preserve">
+    <value>różne dni</value>
+  </data>
+  <data name="uiAllSame.OnContent" xml:space="preserve">
+    <value>codziennie tak samo</value>
+  </data>
+  <data name="uiPoniedz.Text" xml:space="preserve">
+    <value>Poniedziałek</value>
+  </data>
+  <data name="uiWtorek.Text" xml:space="preserve">
+    <value>Wtorek</value>
+  </data>
+  <data name="uiSroda.Text" xml:space="preserve">
+    <value>Środa</value>
+  </data>
+  <data name="uiCzwartek.Text" xml:space="preserve">
+    <value>Czwartek</value>
+  </data>
+  <data name="uiPiatek.Text" xml:space="preserve">
+    <value>Piątek</value>
+  </data>
+  <data name="uiSobota.Text" xml:space="preserve">
+    <value>Sobota</value>
+  </data>
+  <data name="uiNiedz.Text" xml:space="preserve">
+    <value>Niedziela</value>
+  </data>
+  <data name="uiEnabled.Content" xml:space="preserve">
+    <value>Włączony</value>
+  </data>
+  <data name="uiSave.Content" xml:space="preserve">
+    <value>Zapisz!</value>
+  </data>
+  <data name="msgFreq0" xml:space="preserve">
+    <value>0/d, pauza</value>
+  </data>
+  <data name="msgFreq1" xml:space="preserve">
+    <value>1/d, raz, o</value>
+  </data>
+  <data name="msgFreq2" xml:space="preserve">
+    <value>2/d, rano i wieczór, 9/21</value>
+  </data>
+  <data name="msgFreq3" xml:space="preserve">
+    <value>3/d, co 8 godzin, 8/16/23</value>
+  </data>
+  <data name="resAfterButton" xml:space="preserve">
+    <value>Po</value>
+  </data>
+  <data name="resAfterList" xml:space="preserve">
+    <value>Po zdarzeniu</value>
+  </data>
+  <data name="resBeforeButton" xml:space="preserve">
+    <value>Przed</value>
+  </data>
+  <data name="resBeforeList" xml:space="preserve">
+    <value>Tuż przed zdarzeniem</value>
+  </data>
+  <data name="resHomeButton" xml:space="preserve">
+    <value>Dom</value>
+  </data>
+  <data name="resHomeList" xml:space="preserve">
+    <value>W domu</value>
+  </data>
+  <data name="resIgnoreButton" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="resIgnoreList" xml:space="preserve">
+    <value>Normalna pora</value>
+  </data>
+  <data name="resToastTitle" xml:space="preserve">
+    <value>Pigułkowe larum</value>
+  </data>
+  <data name="uiSettGenerateToasts.Header" xml:space="preserve">
+    <value>Generuj powiadomienia na tym urządzeniu</value>
+  </data>
+  <data name="uiSettToastCombo.OffContent" xml:space="preserve">
+    <value>z guzikami</value>
+  </data>
+  <data name="uiSettToastCombo.OnContent" xml:space="preserve">
+    <value>z listą</value>
+  </data>
+  <data name="uiSettIgnoreEmptyLoc.Header" xml:space="preserve">
+    <value>Ignoruj Zdarzenia bez podanej lokalizacji</value>
+  </data>
+  <data name="uiSettIgnoreNoReminder.Header" xml:space="preserve">
+    <value>Ignoruj Zdarzenia bez Przypominania</value>
+  </data>
+  <data name="uiSettDefSnooze.Header" xml:space="preserve">
+    <value>Domyślny czas opóźnienia</value>
+  </data>
+  <data name="uiSettCacheDataHere.Header" xml:space="preserve">
+    <value>Zapisuj pliki na tym urządzeniu</value>
+  </data>
+  <data name="uiSettEANitems.Header" xml:space="preserve">
+    <value>Ile pamiętać zeskanowanych kodów EAN</value>
+  </data>
+  <data name="uiSettDailyReschedule.Header" xml:space="preserve">
+    <value>Codziennie zresetuj powiadomienia</value>
+  </data>
+  <data name="uiSettAllowRemoteSystem.Header" xml:space="preserve">
+    <value>Zezwól na dostęp innym aplikacjom</value>
+  </data>
+  <data name="uiSettOk.Content" xml:space="preserve">
+    <value>Zapisz!</value>
+  </data>
+  <data name="uiSettScheduleToast.Label" xml:space="preserve">
+    <value>Resetuj Toast</value>
+  </data>
+  <data name="resPillDelay" xml:space="preserve">
+    <value>Później</value>
+  </data>
+  <data name="resPillTaken" xml:space="preserve">
+    <value>Zażyłem!</value>
+  </data>
+  <data name="errNoRoamFolder" xml:space="preserve">
+    <value>BŁĄD: nie mogę otworzyć folderu roam?</value>
+  </data>
+  <data name="msgEmptyReminders" xml:space="preserve">
+    <value>Pusty plik z przypomnieniami (lub błąd wczytania) - zainicjalizować go?</value>
+  </data>
+  <data name="msgPomimoWylaczenia" xml:space="preserve">
+    <value>Pomimo wyłączenia na tym device?</value>
+  </data>
+  <data name="msgRescheduleDone" xml:space="preserve">
+    <value>Toasty wygenerowane</value>
+  </data>
+  <data name="msgShouldCreateToast" xml:space="preserve">
+    <value>Włączyłeś Toasty - chcesz je wygenerować?</value>
+  </data>
+  <data name="msgShouldRemoveToast" xml:space="preserve">
+    <value>Wyłączyłeś Toasty - chcesz je usunąć?</value>
+  </data>
+  <data name="resDlgNo" xml:space="preserve">
+    <value>Nie</value>
+  </data>
+  <data name="resDlgYes" xml:space="preserve">
+    <value>Tak</value>
+  </data>
+  <data name="uiShowDebug.Header" xml:space="preserve">
+    <value>Pokazuj informacje debug o błędach</value>
+  </data>
+</root>

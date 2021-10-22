@@ -1,0 +1,77 @@
+﻿<Page
+    x:Class="WezPigulke.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:WezPigulke"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Loaded="Page_Loaded">
+
+    <Grid Margin="5,5,5,5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <TextBlock x:Uid="uiMainTitle" Text="Weź pigułkę" HorizontalAlignment="Center" Margin="0,0,0,10" />
+        
+        <ListView x:Name="uiList" HorizontalContentAlignment="Stretch" Grid.Row="1" >
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment"  Value="Stretch"/>
+                </Style>
+            </ListView.ItemContainerStyle>
+
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="0,5,0,0" BorderThickness="1" BorderBrush="Blue">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="60"/>
+                            <ColumnDefinition Width="30"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="{Binding sNazwaZestawu, Mode=OneWay }" FontSize="22" />
+                        <TextBlock Text="{Binding sDisplayOrgTime, Mode=OneWay }" HorizontalAlignment="Right" VerticalAlignment="Bottom" FontSize="10" />
+
+                        <TextBlock Grid.Column="1" Text="{Binding sDisplayTime, Mode=OneWay }" FontSize="22" />
+                        <CheckBox Grid.Column="2" Unchecked="uiEnable_Checked" Checked="uiEnable_Checked" MinWidth="20" IsChecked="{Binding bEnabled, Mode=OneWay }" Margin="3,0,4,0" />
+                        <Grid.ContextFlyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem x:Uid="uiEdit" Text="Edit" Click="uiEdit_Click" />
+                                <MenuFlyoutItem Text="Internalsy" Click="uiDetails_Click" Visibility="{Binding bIsThisMoje, Mode=OneWay }"/>
+                                <!--  <MenuFlyoutItem Text="Zażyłem wcześniej" Click="uiTaken_Click" />
+                                <MenuFlyoutItem Text="Biorę ze sobą"  />
+                                <MenuFlyoutItem Text="Prolongata (snooze)"  />
+                                <MenuFlyoutItem Text="Delete"  /> 
+                                <MenuFlyoutItem Text="Enable/disable" Click="uiEnable_Click" />
+                                 <MenuFlyoutItem Text="Disable" Click="uiEnable_Click" /> -->
+                            </MenuFlyout>
+                        </Grid.ContextFlyout> 
+
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+    </Grid>
+
+    <Page.BottomAppBar>
+        <CommandBar>
+            <AppBarButton Icon="Add" x:Uid="uiMainAdd" Label="Add" Click="uiAdd_Click"  />
+            <AppBarButton Icon="Library" Label="Biblioteka" Tapped="uiLibrary_Tapped"  >
+            <AppBarButton.Flyout>
+                <MenuFlyout>
+                        <MenuFlyoutItem Text="Szukaj leku" Click="uiLekInfo_Click"/>
+                        <MenuFlyoutItem Text="Moje leki" Click="uiMojeLeki_Click"/>
+                        <!--<MenuFlyoutItem Text="W aptekach" Click="uiSearchApteki_Click"/>-->
+                </MenuFlyout>
+            </AppBarButton.Flyout>
+            </AppBarButton>
+
+            <AppBarButton Icon="Setting" x:Uid="uiSettings" Label="Settings" Click="uiSettings_Click" />
+        </CommandBar>
+
+    </Page.BottomAppBar>
+
+</Page>
