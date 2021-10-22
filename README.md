@@ -5,8 +5,8 @@
  Język polski: https://www.microsoft.com/pl-pl/p/t/9P7DKRVVV5G7
 
 
-# Privacy policy
- http://beskid.geo.uj.edu.pl/p/ms/wezpigulke-privacy.htm
+## Privacy policy
+ https://github.com/pkar70/WezPigulke/wiki/Privacy-policy
 
 
 
