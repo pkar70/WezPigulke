@@ -1,8 +1,6 @@
-﻿' The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
+﻿
+Imports pkar
 
-''' <summary>
-''' An empty page that can be used on its own or navigated to within a Frame.
-''' </summary>
 Public NotInheritable Class AddZestaw
     Inherits Page
 
@@ -17,7 +15,9 @@ Public NotInheritable Class AddZestaw
     End Sub
 
     Private Sub Page_Loaded(sender As Object, e As RoutedEventArgs)
-        DodajCBitems
+        Me.InitDialogs
+
+        DodajCBitems()
         WypelnijDane(msIdZestawu)
     End Sub
 
@@ -47,26 +47,28 @@ Public NotInheritable Class AddZestaw
 
     End Sub
 
-    Private Async Sub uiSave_Click(sender As Object, e As RoutedEventArgs)
+    Private Sub uiSave_Click(sender As Object, e As RoutedEventArgs)
         ' zapisz dane - nowy, albo edytowany
-        Dim oNew As JedenZestaw = DaneDoItemu()
-        App.ZestawyAdd(oNew)
-        Await App.ZestawySave(True)
+        Dim oNew As vblib.JedenZestaw = DaneDoItemu()
+        vblib.globalsy.ZestawyAdd(oNew)
+        vblib.globalsy.Dawkowanie2NextTime(False)
+
+        vblib.globalsy.glZestawy.Save() 'Await App.ZestawySave(True)
         Me.Frame.GoBack()
     End Sub
 
     Private Sub DodajCBitems(oCB As ComboBox)
         Dim oCBitem As ComboBoxItem = New ComboBoxItem
-        oCBitem.Content = GetLangString("msgFreq0")     ' "0/d, pauza"
+        oCBitem.Content = Localize.GetResManString("msgFreq0")     ' "0/d, pauza"
         oCB.Items.Add(oCBitem)
         oCBitem = New ComboBoxItem
-        oCBitem.Content = GetLangString("msgFreq1")     '"1/d, raz, o"
+        oCBitem.Content = Localize.GetResManString("msgFreq1")     '"1/d, raz, o"
         oCB.Items.Add(oCBitem)
         oCBitem = New ComboBoxItem
-        oCBitem.Content = GetLangString("msgFreq2")     '"2/d, rano i wieczór, 9/21"
+        oCBitem.Content = Localize.GetResManString("msgFreq2")     '"2/d, rano i wieczór, 9/21"
         oCB.Items.Add(oCBitem)
         oCBitem = New ComboBoxItem
-        oCBitem.Content = GetLangString("msgFreq3")     '"3/d, co 8 godzin, 8/16/23"
+        oCBitem.Content = Localize.GetResManString("msgFreq3")     '"3/d, co 8 godzin, 8/16/23"
         oCB.Items.Add(oCBitem)
     End Sub
 
@@ -74,6 +76,7 @@ Public NotInheritable Class AddZestaw
 
         ' do combo ogolnego
         DodajCBitems(uiCombo9)
+
         ' do kazdego combo dnia tygodnia dodaj zawartosc
         For Each oUiElem As UIElement In uiSchedule.Children
             Dim oCB As ComboBox = TryCast(oUiElem, ComboBox)
@@ -86,7 +89,7 @@ Public NotInheritable Class AddZestaw
         If msIdZestawu = "" Then Return
 
         ' dane z zestawu na ekran
-        For Each oItem As JedenZestaw In App.glZestawy
+        For Each oItem As vblib.JedenZestaw In vblib.globalsy.glZestawy
             If oItem.sId = msIdZestawu Then
                 uiNazwaZestawu.Text = oItem.sNazwaZestawu
                 uiMelodyjka.Text = oItem.sMelodyjka
@@ -155,8 +158,8 @@ Public NotInheritable Class AddZestaw
         SetRow(oCB, oTP, sSchedule)
     End Sub
 
-    Private Function DaneDoItemu() As JedenZestaw
-        Dim oNew As JedenZestaw = New JedenZestaw
+    Private Function DaneDoItemu() As vblib.JedenZestaw
+        Dim oNew As New vblib.JedenZestaw
         If msIdZestawu <> "" Then
             oNew.sId = msIdZestawu
         Else

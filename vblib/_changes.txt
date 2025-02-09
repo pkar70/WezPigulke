@@ -1,0 +1,5 @@
+﻿2025.02.06
+* OneDrive sync, aktualizacja SzukajLeku (zmiana po stronie serwera), sortowanie w MojeLeki
+
+2025.01.31
+* dodałem vblib, jako wstęp do migracji do nugetów (i późniejszego ułatwienia Uno/MAUI itp)

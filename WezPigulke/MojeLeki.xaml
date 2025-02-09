@@ -6,63 +6,41 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Loaded="Page_Loaded">
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Loaded="Page_Loaded" Unloaded="Page_Unloaded">
 
-    <Grid Margin="5,5,5,5" x:Name="uiGrid">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition/>
-        </Grid.RowDefinitions>
+    <local:StretchedGrid Margin="5,5,5,5" Rows="A,*">
+
         <TextBlock Text="Moje leki" HorizontalAlignment="Center" FontSize="20" Margin="0,0,0,20"/>
 
-        <ProgressRing x:Name="uiProcesuje" Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
-
-
-        <ListView x:Name="uiList" HorizontalContentAlignment="Stretch" Grid.Row="1" >
-            <ListView.ItemContainerStyle>
-                <Style TargetType="ListViewItem">
-                    <Setter Property="HorizontalContentAlignment"  Value="Stretch"/>
-                </Style>
-            </ListView.ItemContainerStyle>
+        <local:StretchedListView x:Name="uiList" Grid.Row="1" >
             <ListView.HeaderTemplate>
                 <DataTemplate>
-                <Grid Margin="10,5,10,0" BorderThickness="1" BorderBrush="Blue">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="40" />
-                        <ColumnDefinition Width="30" />
-                    </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Nazwa" HorizontalAlignment="Center" />
-                        <TextBlock Grid.Column="1" Text="Stały" HorizontalAlignment="Center" />
+                <local:StretchedGridBlue Margin="10,5,10,0" BorderThickness="1" Cols="*,40,30">
+
+                    <TextBlock Grid.Column="0" Text="Nazwa" HorizontalAlignment="Center" />
                         <TextBlock Grid.Column="2" Text="Inter" HorizontalAlignment="Center" />
-                    </Grid>
+                    </local:StretchedGridBlue>
                 </DataTemplate>
             </ListView.HeaderTemplate>
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <Grid Margin="0,5,0,0" BorderThickness="1" BorderBrush="Blue">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition/>
-                            <ColumnDefinition Width="30" />
-                            <ColumnDefinition Width="30" />
-                        </Grid.ColumnDefinitions>
+                    <local:StretchedGridBlue Margin="0,5,0,0" BorderThickness="1" Rows="A,A"  Cols="*,40,30">
 
                         <TextBlock Grid.Row="0" Text="{Binding sNazwa, Mode=OneWay }" FontSize="20" FontWeight="Bold" />
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding sNazwaCzynna, Mode=OneWay }" />
-                        <CheckBox Grid.Column="1" Grid.RowSpan="2" MinWidth="20" IsChecked="{Binding bStaly, Mode=OneWay }" Margin="3,0,4,0" IsEnabled="False" />
+                        <local:UCtypLeku Grid.Column="1" Grid.RowSpan="2" MinWidth="20" Margin="3,0,4,0" ValueChanged="UCtypLeku_ValueChanged" />
+                        <!-- Value="{Binding iTypLeku, Mode=TwoWay}"-->
+
+                        <!--<CheckBox Grid.Column="1" Grid.RowSpan="2" MinWidth="20" IsChecked="{Binding bStaly, Mode=OneWay }" Margin="3,0,4,0" IsEnabled="False" />-->
                         <CheckBox Grid.Column="2" Grid.RowSpan="2" MinWidth="20" IsChecked="{Binding bIncludeInteraction, Mode=TwoWay }" Margin="3,0,4,0" />
 
                         <Grid.ContextFlyout>
                             <MenuFlyout>
                                 <MenuFlyoutItem Text="Pokaż info" Click="uiShowDetails_Click"/>
-                                <MenuFlyoutSubItem Text="Zmiana typu"  >
+                                <!--<MenuFlyoutSubItem Text="Zmiana typu"  >
                                     <MenuFlyoutItem Text="Stały" Click="uiSetStaly_Click"/>
                                     <MenuFlyoutItem Text="Chwilowy" Click="uiSetTemp_Click"/>
-                                </MenuFlyoutSubItem>
+                                </MenuFlyoutSubItem>-->
                                 <MenuFlyoutSubItem Text="Interakcje"  >
                                     <MenuFlyoutItem Text="Z żywnością" Click="uiInterJedz_Click"/>
                                     <MenuFlyoutItem Text="Z alkoholem" Click="uiInterAlk_Click"/>
@@ -72,19 +50,30 @@
                             </MenuFlyout>
                         </Grid.ContextFlyout>
 
-                    </Grid>
+                    </local:StretchedGridBlue>
                 </DataTemplate>
             </ListView.ItemTemplate>
-        </ListView>
+        </local:StretchedListView>
 
-    </Grid>
+    </local:StretchedGrid>
     
-<!--    <Page.BottomAppBar>
-        <CommandBar>
-            <AppBarButton Icon="Download" Label="Ściągnij PDF"  />
+    <Page.BottomAppBar>
+                <CommandBar ClosedDisplayMode="Minimal" >
+                    <AppBarButton Icon="Sort" Label="Sort" >
+                        <AppBarButton.Flyout>
+                            <MenuFlyout>
+                                <ToggleMenuFlyoutItem Text="typ+nazwa" Click="uiSortTypNazwa_Click" IsChecked="True"/>
+                                <ToggleMenuFlyoutItem Text="subst+nazwa" Click="uiSortSubstNazwa_Click"/>
+                                <ToggleMenuFlyoutItem Text="nazwa" Click="uiSortNazwa_Click"/>
+                        <ToggleMenuFlyoutItem Text="ATC" Click="uiSortATC_Click"/>
+                    </MenuFlyout>
+                        </AppBarButton.Flyout>
+                    </AppBarButton>
+            <AppBarButton Icon="Refresh" Label="Sync OneDrive" Click="uiODsync_Click" />
+            <AppBarButton Icon="ReportHacked" Label="Wycofania" Click="uiCheckWycofania_Click" />
             <AppBarButton Icon="TwoPage"  Label="Interakcje" Click="uiInterakcje_Click"/> 
         </CommandBar>
 
-    </Page.BottomAppBar> -->
+    </Page.BottomAppBar> 
 
 </Page>

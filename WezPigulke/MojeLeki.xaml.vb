@@ -8,70 +8,128 @@
 
 ' refresh danych? jakby doszly nowe EANy na przyklad?
 
+Imports pkar.UI.Extensions
+Imports pkar.UWP
+Imports vblib
+
 Public NotInheritable Class MojeLeki
     Inherits Page
 
     Private moHttp As Windows.Web.Http.HttpClient
 
-    Private Sub Progresuj(bShow As Boolean)
-        If bShow Then
-            Dim dVal As Double
-            dVal = (Math.Min(uiGrid.ActualHeight, uiGrid.ActualWidth)) / 2
-            uiProcesuje.Width = dVal
-            uiProcesuje.Height = dVal
+    'Private Sub Progresuj(bShow As Boolean)
+    '    If bShow Then
+    '        Dim dVal As Double
+    '        dVal = (Math.Min(uiGrid.ActualHeight, uiGrid.ActualWidth)) / 2
+    '        uiProcesuje.Width = dVal
+    '        uiProcesuje.Height = dVal
 
-            uiProcesuje.Visibility = Visibility.Visible
-            uiProcesuje.IsActive = True
-        Else
-            uiProcesuje.Visibility = Visibility.Collapsed
-            uiProcesuje.IsActive = False
-        End If
-    End Sub
+    '        uiProcesuje.Visibility = Visibility.Visible
+    '        uiProcesuje.IsActive = True
+    '    Else
+    '        uiProcesuje.Visibility = Visibility.Collapsed
+    '        uiProcesuje.IsActive = False
+    '    End If
+    'End Sub
 
     Private Sub Page_Loaded(sender As Object, e As RoutedEventArgs)
-        uiList.ItemsSource = From c In App.glZnanePudelka Order By c.iTypLeku Descending, c.sNazwa
+        Me.InitDialogs
+        Me.ProgRingInit(True, False)
+
+        PokazListe(LekiSortMode.typNazwa)
     End Sub
 
+#Region "sortowanie"
+
+    ' ewentualnie CommandParameter, tylko wtedy nie ma Enum i sam muszę pilnować integerów; albo z oFE.name
+
+    Protected Enum LekiSortMode
+        typNazwa
+        substNazwa
+        nazwa
+        ATC
+    End Enum
+
+    Private Sub uiSortTypNazwa_Click(sender As Object, e As RoutedEventArgs)
+        PokazListe(LekiSortMode.typNazwa)
+    End Sub
+
+    Private Sub uiSortSubstNazwa_Click(sender As Object, e As RoutedEventArgs)
+        PokazListe(LekiSortMode.substNazwa)
+    End Sub
+
+    Private Sub uiSortNazwa_Click(sender As Object, e As RoutedEventArgs)
+        PokazListe(LekiSortMode.nazwa)
+    End Sub
+    Private Sub uiSortATC_Click(sender As Object, e As RoutedEventArgs)
+        PokazListe(LekiSortMode.ATC)
+    End Sub
+
+    Private Sub PokazListe(sortMode As LekiSortMode)
+        Select Case sortMode
+            Case LekiSortMode.nazwa
+                uiList.ItemsSource = From c In vblib.globalsy.glZnanePudelka Order By c.sNazwa
+            Case LekiSortMode.substNazwa
+                uiList.ItemsSource = From c In vblib.globalsy.glZnanePudelka Order By c.sNazwaCzynna, c.sNazwa
+            Case LekiSortMode.ATC
+                uiList.ItemsSource = From c In vblib.globalsy.glZnanePudelka Order By c.sKodATC
+            Case Else
+                uiList.ItemsSource = From c In vblib.globalsy.glZnanePudelka Order By c.iTypLeku Descending, c.sNazwa
+        End Select
+    End Sub
+#End Region
+
+    Private Function Sender2Pudelko(sender As Object) As vblib.JednoPudelko
+        Dim oFE As FrameworkElement
+        oFE = TryCast(sender, FrameworkElement)
+        If oFE Is Nothing Then Return Nothing
+        Return TryCast(oFE.DataContext, vblib.JednoPudelko)
+    End Function
+
     Private Sub uiShowDetails_Click(sender As Object, e As RoutedEventArgs)
-        Dim oMFI As MenuFlyoutItem
-        oMFI = TryCast(sender, MenuFlyoutItem)
-        If oMFI Is Nothing Then Return
-        Dim oItem As JednoPudelko = TryCast(oMFI.DataContext, JednoPudelko)
+        Dim oItem As vblib.JednoPudelko = Sender2Pudelko(sender)
         If oItem Is Nothing Then Return
         Me.Frame.Navigate(GetType(DaneLeku), oItem.sBarcode)
     End Sub
 
     Private Sub uiShowUlotka_Click(sender As Object, e As RoutedEventArgs)
-        Dim oMFI As MenuFlyoutItem
-        oMFI = TryCast(sender, MenuFlyoutItem)
-        If oMFI Is Nothing Then Return
-        Dim oItem As JednoPudelko = TryCast(oMFI.DataContext, JednoPudelko)
+        Dim oItem As vblib.JednoPudelko = Sender2Pudelko(sender)
         If oItem Is Nothing Then Return
 
     End Sub
 
     Private Sub uiShowCharakt_Click(sender As Object, e As RoutedEventArgs)
-        Dim oMFI As MenuFlyoutItem
-        oMFI = TryCast(sender, MenuFlyoutItem)
-        If oMFI Is Nothing Then Return
-        Dim oItem As JednoPudelko = TryCast(oMFI.DataContext, JednoPudelko)
+        Dim oItem As vblib.JednoPudelko = Sender2Pudelko(sender)
         If oItem Is Nothing Then Return
 
     End Sub
 
-    Private Async Function ZmianaTypu(sender As Object, bStaly As Boolean) As Task
-        Dim oMFI As MenuFlyoutItem
-        oMFI = TryCast(sender, MenuFlyoutItem)
-        If oMFI Is Nothing Then Return
-        Dim oItem As JednoPudelko = TryCast(oMFI.DataContext, JednoPudelko)
+    Private _isChanged As Boolean = False
+
+    Private Sub Page_Unloaded(sender As Object, e As RoutedEventArgs)
+        ' zapisanie, mógłby tylko po zmianach, tylko jak to wychwycić?
+        If _isChanged Then
+            Debug.WriteLine("chyba mam zmienione, i powinienem zapisac")
+            vblib.globalsy.glZnanePudelka.Save()
+        End If
+    End Sub
+
+    Private Sub UCtypLeku_ValueChanged(sender As Object, e As RoutedEventArgs)
+        _isChanged = True
+    End Sub
+
+
+#If False Then
+    Private Sub ZmianaTypu(sender As Object, bStaly As Boolean)
+        Dim oItem As vblib.JednoPudelko = Sender2Pudelko(sender)
         If oItem Is Nothing Then Return
 
-        If oItem.bStaly = bStaly Then Return
-        oItem.bStaly = bStaly
+        If bStaly AndAlso oItem.iTypLeku > 0 Then Return
+
         oItem.iTypLeku = If(bStaly, 1, 0)
-        Await App.ZnanePudelkaSave()
-        uiList.ItemsSource = From c In App.glZnanePudelka Order By c.iTypLeku Descending, c.sNazwa
-    End Function
+        vblib.globalsy.glZnanePudelka.Save()
+        PokazListe()
+    End Sub
 
     Private Sub uiSetStaly_Click(sender As Object, e As RoutedEventArgs)
         ZmianaTypu(sender, True)
@@ -80,24 +138,25 @@ Public NotInheritable Class MojeLeki
     Private Sub uiSetTemp_Click(sender As Object, e As RoutedEventArgs)
         ZmianaTypu(sender, False)
     End Sub
+#End If
 
-    Private Async Function Interakcje_SciagnijDaneSubstancji(oLek As JednoPudelko) As Task(Of String)
+#Region "interakcje"
+
+
+    Private Async Function Interakcje_SciagnijDaneSubstancji(oLek As vblib.JednoPudelko) As Task(Of vblib.JednaSubstancja)
         ' zwraca sId substancji
 
-        Dim oSubst As JednaSubstancja
+        Dim oSubst As vblib.JednaSubstancja = Await oLek.ZnajdzSubstancje
+        If oSubst IsNot Nothing Then Return oSubst
 
-        For Each oSubst In App.glZnaneSubstancje
-            If oSubst.sNazwa.ToLower = oLek.sNazwaCzynna.ToLower Then Return oSubst.sId
-        Next
-
-        oSubst = New JednaSubstancja
+        oSubst = New vblib.JednaSubstancja
         oSubst.sNazwa = oLek.sNazwaCzynna
 
         If moHttp Is Nothing Then
             moHttp = New Windows.Web.Http.HttpClient
         End If
 
-        Progresuj(True)
+        Me.ProgRingShow(True)
 
         Dim sBaseUri As String = "https://ktomalek.pl/l/interakcje/"
         Dim oResp As Windows.Web.Http.HttpResponseMessage = Nothing
@@ -115,8 +174,8 @@ Public NotInheritable Class MojeLeki
         Dim iInd As Integer
         iInd = sResp.IndexOf("Znalezione substancje czynne")
         If iInd < 1 Then
-            Progresuj(False)
-            Return ""
+            Me.ProgRingShow(False)
+            Return Nothing
         End If
 
         sResp = sResp.Substring(iInd)
@@ -130,8 +189,8 @@ Public NotInheritable Class MojeLeki
             If iInd > 0 Then oSubst.sId = sResp.Substring(0, iInd)
         End If
         If iInd < 1 Then
-            Progresuj(False)
-            Return ""
+            Me.ProgRingShow(False)
+            Return Nothing
         End If
 
         'sResp = sResp.Substring(iInd)
@@ -143,36 +202,30 @@ Public NotInheritable Class MojeLeki
         'sResp = sResp.Substring(0, iInd)
         'oItem.sIdSubstancji = oItem.sIdSubstancji & "&nazwa=" & sResp
 
-        App.ZnaneSubstancjeAddChange(oSubst)
-        Await App.ZnaneSubstancjeSave     ' zapisz, jakby potem był błąd - ten krok będzie można pominąć
+        vblib.globalsy.ZnaneSubstancjeAddChange(oSubst)
+        vblib.globalsy.glZnaneSubstancje.Save() ' App.ZnaneSubstancjeSave     ' zapisz, jakby potem był błąd - ten krok będzie można pominąć
 
-        Progresuj(False)
-        Return oSubst.sId
+        Me.ProgRingShow(False)
+        Return oSubst
 
     End Function
 
 
     Private Function InterakcjeLekow_SprawdzZaznaczenia() As Integer
-        'Dim iLekiCnt As Integer = 0
-        'For Each oLek As JednoPudelko In From c In App.glZnanePudelka Where c.bIncludeInteraction
-        '    iLekiCnt += 1
-        'Next
-        'Return iLekiCnt
-        Return (From c In App.glZnanePudelka Where c.bIncludeInteraction).Count
+        Return (From c In vblib.globalsy.glZnanePudelka Where c.bIncludeInteraction).Count
     End Function
 
     Private Async Function InterakcjeLekow_ZnamSubstancje() As Task(Of Boolean)
-        For Each oLek As JednoPudelko In From c In App.glZnanePudelka Where c.bIncludeInteraction
+        For Each oLek As vblib.JednoPudelko In From c In vblib.globalsy.glZnanePudelka Where c.bIncludeInteraction
             Dim bFound As Boolean = False
-            For Each oSubst As JednaSubstancja In App.glZnaneSubstancje
+            For Each oSubst As vblib.JednaSubstancja In vblib.globalsy.glZnaneSubstancje
                 If oSubst.sNazwa.ToLower = oLek.sNazwaCzynna.ToLower Then
                     bFound = True
                     Exit For
                 End If
             Next
             If Not bFound Then
-                Dim sSubstId As String = Await Interakcje_SciagnijDaneSubstancji(oLek)
-                If sSubstId = "" Then Return False
+                If Await Interakcje_SciagnijDaneSubstancji(oLek) Is Nothing Then Return False
             End If
         Next
         Return True
@@ -189,16 +242,16 @@ Public NotInheritable Class MojeLeki
         ' https://ktomalek.pl/l/interakcje/pomiedzy-lekami
 
         If InterakcjeLekow_SprawdzZaznaczenia() < 2 Then
-            DialogBox("Interakcje między lekami wymagają zaznaczenia przynajmniej dwu leków")
+            Me.MsgBox("Interakcje między lekami wymagają zaznaczenia przynajmniej dwu leków")
             Return
         End If
 
-        Progresuj(True)
+        Me.ProgRingShow(True)
         If Not Await InterakcjeLekow_ZnamSubstancje() Then
-            Await DialogBox("Nie znam substancji do niektórych leków!")
+            Await Me.MsgBoxAsync("Nie znam substancji do niektórych leków!")
             ' *TODO* tylko ignorowanie, bo:
             ' lek bez substancji można zignorować (albo dodać jako lek, nie jako substancje)
-            Progresuj(False)
+            Me.ProgRingShow(False)
             Return
         End If
 
@@ -210,7 +263,7 @@ Public NotInheritable Class MojeLeki
         'Dim oResp As Windows.Web.Http.HttpResponseMessage = Nothing
         'Dim sResp As String = ""
         'oResp = Await moHttp.GetAsync(New Uri(sBaseUri & "pomiedzy-lekami"))
-        'sResp = Await oResp.Content.ReadAsStringAsync
+        'sResp = Await oResp.JSON_Lek_GlowneInfo.ReadAsStringAsync
         'Await Task.Delay(100)   ' poczekajmy
 
         'For Each oLek In From c In App.glZnanePudelka Where c.bIncludeInteraction
@@ -219,7 +272,7 @@ Public NotInheritable Class MojeLeki
         '            ' dodaj do interakcji
         '            Dim sUri As String = sBaseUri & "pomiedzy-lekami/a/su-" & oSubst.sId
         '            oResp = Await moHttp.GetAsync(New Uri(sUri))
-        '            sResp = Await oResp.Content.ReadAsStringAsync
+        '            sResp = Await oResp.JSON_Lek_GlowneInfo.ReadAsStringAsync
         '            Await Task.Delay(100)   ' poczekajmy
         '            Exit For
         '        End If
@@ -229,39 +282,29 @@ Public NotInheritable Class MojeLeki
         '' sResp teoretycznie ma dane o interakcjach
         'Dim iInd As Integer = 0
 
-        Progresuj(False)
-        Await DialogBox("Jeszcze nie umiem")
+        Me.ProgRingShow(False)
+        Me.MsgBox("Jeszcze nie umiem")
 
     End Sub
 
     Private Async Function PokazInterakcje(sender As Object, bJedzenie As Boolean) As Task
         ' lek z alkoholem/zywnoscia , nie pomiedzy lekami
 
-        Dim oMFI As MenuFlyoutItem
-        oMFI = TryCast(sender, MenuFlyoutItem)
-        If oMFI Is Nothing Then Return
-        Dim oItem As JednoPudelko = TryCast(oMFI.DataContext, JednoPudelko)
+        Dim oItem As vblib.JednoPudelko = Sender2Pudelko(sender)
         If oItem Is Nothing Then Return
 
-        Dim oSubst As JednaSubstancja = Nothing
-
-        Dim sSubstId As String = Await Interakcje_SciagnijDaneSubstancji(oItem)
-        If sSubstId = "" Then
-            Await DialogBox("Nie znalazłem substancji czynnej?")
+        Dim oSubst As vblib.JednaSubstancja = Await oItem.ZnajdzSubstancje
+        If oSubst Is Nothing Then
+            Me.MsgBox("Nie znalazłem substancji czynnej?")
             Return
         End If
 
-        For Each oSubst In App.glZnaneSubstancje
-            If oSubst.sId = sSubstId Then
-                Dim sMsg As String = ""
-                sMsg = If(bJedzenie, oSubst.sInterJedz, oSubst.sInterAlk)
-                If sMsg.Length > 2 Then
-                    Await DialogBox(sMsg)
-                    Return
-                End If
-                Exit For
-            End If
-        Next
+        Dim sMsg As String = ""
+        sMsg = If(bJedzenie, oSubst.sInterJedz, oSubst.sInterAlk)
+        If sMsg.Length > 2 Then
+            Await Me.MsgBoxAsync(sMsg)
+            Return
+        End If
 
         'If Not bFound Then oSubst = New JednaSubstancja
         'oSubst.sNazwa = oItem.sNazwaCzynna
@@ -272,7 +315,7 @@ Public NotInheritable Class MojeLeki
             moHttp = New Windows.Web.Http.HttpClient
         End If
 
-        Progresuj(True)
+        Me.ProgRingShow(True)
 
         Dim sBaseUri As String = "https://ktomalek.pl/l/interakcje/"
         Dim oResp As Windows.Web.Http.HttpResponseMessage = Nothing
@@ -281,7 +324,7 @@ Public NotInheritable Class MojeLeki
         sResp = Await oResp.Content.ReadAsStringAsync
         Await Task.Delay(100)   ' poczekajmy
 
-        Dim sUri As String = sBaseUri & sLink & "/a/su-" & sSubstId
+        Dim sUri As String = sBaseUri & sLink & "/a/br-" & oSubst.sId ' & sSubstId
 
         'sUri = sBaseUri & "dodajDoSesjiAjax?id=" & oItem.sIdSubstancji & "&typ=SUBSTANCJA"
         oResp = Await moHttp.GetAsync(New Uri(sUri))
@@ -295,11 +338,12 @@ Public NotInheritable Class MojeLeki
             Else
                 oSubst.sInterAlk = "Brak interakcji"
             End If
-            App.ZnaneSubstancjeAddChange(oSubst)
-            Dim oTask As Task = App.ZnaneSubstancjeSave
-            Await DialogBox("Brak interakcji")
-            Await oTask ' wykorzystujemy czas dialogboxa
-            Progresuj(False)
+            vblib.globalsy.ZnaneSubstancjeAddChange(oSubst)
+            vblib.globalsy.glZnaneSubstancje.Save()
+            'Dim oTask As Task = App.ZnaneSubstancjeSave
+            Await Me.MsgBoxAsync("Brak interakcji")
+            'Await oTask ' wykorzystujemy czas dialogboxa
+            Me.ProgRingShow(False)
             Return
         End If
 
@@ -315,27 +359,28 @@ Public NotInheritable Class MojeLeki
             iInd = sResp.IndexOf("<h3")
             sResp = sResp.Substring(iInd)
             iInd = sResp.IndexOf("</h3")
-            Dim sInterakcja As String = RemoveHtmlTags(sResp.Substring(0, iInd)) ' istotna, etc.
+            Dim sInterakcja As String '= RemoveHtmlTags(sResp.Substring(0, iInd)) ' istotna, etc.
 
             iInd = sResp.IndexOf("<p", iInd)
             sResp = sResp.Substring(iInd)
 
-            sInterakcja = sInterakcja & vbCrLf & RemoveHtmlTags(sResp)
+            sInterakcja = sInterakcja & vbCrLf '& RemoveHtmlTags(sResp)
 
             If bJedzenie Then
                 oSubst.sInterJedz = sInterakcja
             Else
                 oSubst.sInterAlk = sInterakcja
             End If
-            App.ZnaneSubstancjeAddChange(oSubst)
-            Dim oTask As Task = App.ZnaneSubstancjeSave
-            Await DialogBox(sInterakcja)
-            Await oTask ' wykorzystujemy czas dialogboxa
+            vblib.globalsy.ZnaneSubstancjeAddChange(oSubst)
+            'Dim oTask As Task = App.ZnaneSubstancjeSave
+            Await Me.MsgBoxAsync(sInterakcja)
+            'Await oTask ' wykorzystujemy czas dialogboxa
+            vblib.globalsy.glZnaneSubstancje.Save()
         Else
-            Await DialogBox("Nie rozumiem odpowiedzi serwera")
+            Await Me.MsgBoxAsync("Nie rozumiem odpowiedzi serwera")
         End If
 
-        Progresuj(False)
+        Me.ProgRingShow(False)
 
 
         ' https://ktomalek.pl/l/interakcje/szukajBrandowISubstancjiAjax?searchInput=rami
@@ -353,4 +398,59 @@ Public NotInheritable Class MojeLeki
         ' https://ktomalek.pl/l/interakcje/lekow-z-alkoholem
         PokazInterakcje(sender, False)
     End Sub
+#End Region
+
+
+#Region "onedrive"
+
+    Dim _Odrive As New OneDriveSync({"pudelka.xml", "substancje.xml", "zestawy.xml", "pudelka.json", "substancje.json", "zestawy.json", "gifdec.json"}, Windows.Storage.ApplicationData.Current.RoamingFolder)
+
+
+    Private Async Sub uiODsync_Click(sender As Object, e As RoutedEventArgs)
+
+        Try
+            Me.ProgRingShow(True)
+            If Not Await _Odrive.ZalogujAsync(True) Then Return
+
+            Dim retMsg As String = Await _Odrive.SyncujAsync
+            Me.MsgBox(retMsg)
+
+        Finally
+            Me.ProgRingShow(False)
+        End Try
+
+    End Sub
+
+#End Region
+
+    Private Async Sub uiCheckWycofania_Click(sender As Object, e As RoutedEventArgs)
+        If vblib.globalsy.glWycofaniaGIF Is Nothing Then
+            vblib.globalsy.glWycofaniaGIF = New vblib.WycofaniaGIF(Windows.Storage.ApplicationData.Current.RoamingFolder.Path)
+            vblib.globalsy.glWycofaniaGIF.LoadCache()
+        End If
+
+        If pkar.NetIsIPavailable Then
+            Me.ProgRingShow(True)
+            Await vblib.globalsy.glWycofaniaGIF.ImportNewDecyzje(100)
+            Me.ProgRingShow(False)
+        End If
+
+        Dim trafienia As String = vblib.globalsy.SprawdzWycofania(False)
+
+        If trafienia Is Nothing Then
+            Me.MsgBox("Nieudane sprawdzenie wycofań - nie znam leków bądź wycofań")
+            Return
+        End If
+
+        If trafienia = "" Then
+            Me.MsgBox("Żaden lek nie został wycofany")
+            Return
+        End If
+
+        Me.MsgBox("Zmiany statusu leków:" & vbCrLf & trafienia)
+
+    End Sub
+
+
+
 End Class

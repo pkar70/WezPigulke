@@ -7,33 +7,36 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Loaded="Page_Loaded">
-    <Grid Margin="5,5,5,5">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition/>
-        </Grid.RowDefinitions>        
-    <TextBlock Text="Settings" x:Uid="uiSettTitle" HorizontalAlignment="Center" FontSize="20" />
-        <TextBlock FontSize="10" HorizontalAlignment="Center" Text="." x:Name="uiVersion" Grid.Row="1" Margin="0,5,0,10"/>
+    <local:StretchedGrid Margin="5,5,5,5" Rows="A,A,*">
+
+        <TextBlock Text="Settings" x:Uid="uiSettTitle" HorizontalAlignment="Center" FontSize="20" />
+        <TextBlock FontSize="10" HorizontalAlignment="Center" Text="." Name="uiVersion" Grid.Row="1" Margin="0,5,0,10"/>
 
         <ScrollViewer Grid.Row="2">
     <StackPanel >
-                <ToggleSwitch x:Name="uiGenerateToasts" x:Uid="uiSettGenerateToasts" Header="Generate toasts on this device"/>
-                <ToggleSwitch x:Name="uiToastCombo" x:Uid="uiSettToastCombo" OnContent="with list" OffContent="with buttons" />
-                <ToggleSwitch x:Name="uiIgnoreEmptyLoc" x:Uid="uiSettIgnoreEmptyLoc" Header="Ignore Events with empty Location"/>
-                <ToggleSwitch x:Name="uiIgnoreNoReminder" x:Uid="uiSettIgnoreNoReminder" Header="Ignore Events without Reminder"/>
-                <TextBox x:Name="uiIgnoreLocMask" x:Uid="uiSettIgnoreLocMask" Header="Ignore Event when Location contains"/>
-                <Slider x:Name="uiDefSnooze" x:Uid="uiSettDefSnooze" Minimum="1" Maximum="59" Header="Default snooze time" Margin="5,0,10,0"/>
+                <ToggleSwitch x:Name="uiGenerateToasts" x:Uid="uiSettGenerateToasts" Header="Generate toasts on this device" />
+
+        
+        <!-- obszar Enabled/Disabled-->
+                <ToggleSwitch x:Name="uiToastCombo" x:Uid="uiSettToastCombo" OnContent="with list" OffContent="with buttons" IsEnabled="{Binding IsOn,ElementName=uiGenerateToasts}" />
+                <ToggleSwitch x:Name="uiIgnoreEmptyLoc" x:Uid="uiSettIgnoreEmptyLoc" Header="Ignore Events with empty Location" IsEnabled="{Binding IsOn,ElementName=uiGenerateToasts}" />
+                <ToggleSwitch x:Name="uiIgnoreNoReminder" x:Uid="uiSettIgnoreNoReminder" Header="Ignore Events without Reminder" IsEnabled="{Binding IsOn,ElementName=uiGenerateToasts}" />
+                <TextBox x:Name="uiIgnoreLocMask" x:Uid="uiSettIgnoreLocMask" Header="Ignore Event when Location contains" IsEnabled="{Binding IsOn,ElementName=uiGenerateToasts}" />
+                <Slider x:Name="uiDefSnooze" x:Uid="uiSettDefSnooze" Minimum="1" Maximum="59" Header="Default snooze time" Margin="5,0,10,0" IsEnabled="{Binding IsOn,ElementName=uiGenerateToasts}" />
+                <ToggleSwitch x:Name="uiDailyReschedule" x:Uid="uiSettDailyReschedule" Header="Auto daily reschedule" IsEnabled="{Binding IsOn,ElementName=uiGenerateToasts}" Toggled="uiDailyReschedule_Toggled"/>
+                <TimePicker ClockIdentifier="24HourClock" x:Name="uiRescheduleTime" x:Uid="uiSettRescheduleTime" IsEnabled="{Binding IsOn,ElementName=uiGenerateToasts}" />
+                <!-- koniec obszaru Enabled/Disabled-->
+
                 <ToggleSwitch x:Name="uiCacheDataHere" x:Uid="uiSettCacheDataHere" Header="Cache data on this device"/>
                 <Slider x:Name="uiEANitems" x:Uid="uiSettEANitems" Minimum="1" Maximum="15" Header="History of scanned EAN (barcode)" Margin="5,0,10,0"/>
-                <ToggleSwitch x:Name="uiDailyReschedule" x:Uid="uiSettDailyReschedule" Header="Auto daily reschedule"/>
-                <TimePicker ClockIdentifier="24HourClock" x:Name="uiRescheduleTime" x:Uid="uiSettRescheduleTime" />
+                <ToggleSwitch Name="uiCheckWycofania" Header="Sprawdzaj wycofania leków" ToolTipService.ToolTip="Sprawdzaj (ok. 17:00) wycofania leków" />
+
                 <ToggleSwitch x:Name="uiAllowRemoteSystem" x:Uid="uiSettAllowRemoteSystem" Header="Allow other apps to get data" Margin="0,10,0,0"/>
                 <ToggleSwitch x:Name="uiShowDebug" x:Uid="uiShowDebug" Header="Show debug error data" Margin="0,10,0,0"/>
                 <Button x:Name="uiOk" x:Uid="uiSettOk" HorizontalAlignment="Center" Margin="0,20,0,0" Click="uiOk_Click" Content="Save!"/>
     </StackPanel>
         </ScrollViewer>
-    </Grid>
+    </local:StretchedGrid>
 
     <Page.BottomAppBar>
         <CommandBar>

@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.271
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35707.178 d17.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "WezPigulke", "WezPigulke\WezPigulke.vbproj", "{ED6CEF41-D12C-4587-83E7-963310619EAC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{67D19996-AA02-45FC-ADF9-E8149C19338A}"
+EndProject
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "vblib", "vblib\vblib.vbproj", "{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,6 +45,22 @@ Global
 		{ED6CEF41-D12C-4587-83E7-963310619EAC}.Release|x86.ActiveCfg = Release|x86
 		{ED6CEF41-D12C-4587-83E7-963310619EAC}.Release|x86.Build.0 = Release|x86
 		{ED6CEF41-D12C-4587-83E7-963310619EAC}.Release|x86.Deploy.0 = Release|x86
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Debug|ARM.Build.0 = Debug|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Debug|x64.Build.0 = Debug|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Debug|x86.Build.0 = Debug|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Release|ARM.ActiveCfg = Release|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Release|ARM.Build.0 = Release|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Release|ARM64.Build.0 = Release|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Release|x64.ActiveCfg = Release|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Release|x64.Build.0 = Release|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Release|x86.ActiveCfg = Release|Any CPU
+		{ED2FF75C-2FCE-46A7-8C27-BDDF92468685}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
