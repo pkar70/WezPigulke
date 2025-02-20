@@ -30,7 +30,7 @@
                 <ToggleSwitch x:Name="uiCacheDataHere" x:Uid="uiSettCacheDataHere" Header="Cache data on this device"/>
                 <Slider x:Name="uiEANitems" x:Uid="uiSettEANitems" Minimum="1" Maximum="15" Header="History of scanned EAN (barcode)" Margin="5,0,10,0"/>
                 <ToggleSwitch Name="uiCheckWycofania" Header="Sprawdzaj wycofania leków" ToolTipService.ToolTip="Sprawdzaj (ok. 17:00) wycofania leków" />
-
+                <ToggleSwitch Name="uiToastForAll" Header="Toastuj wszystkie zmiany" ToolTipService.ToolTip="Pokaż Toast ze zmianami statusu wszystkich leków, nie tylko Twoich" IsEnabled="{Binding IsOn, ElementName=uiCheckWycofania}"/>
                 <ToggleSwitch x:Name="uiAllowRemoteSystem" x:Uid="uiSettAllowRemoteSystem" Header="Allow other apps to get data" Margin="0,10,0,0"/>
                 <ToggleSwitch x:Name="uiShowDebug" x:Uid="uiShowDebug" Header="Show debug error data" Margin="0,10,0,0"/>
                 <Button x:Name="uiOk" x:Uid="uiSettOk" HorizontalAlignment="Center" Margin="0,20,0,0" Click="uiOk_Click" Content="Save!"/>

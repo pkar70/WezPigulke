@@ -9,7 +9,10 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" GotFocus="Page_GotFocus" Loaded="Page_Loaded">
 
     <local:StretchedGrid x:Name="uiGrid" Margin="5,5,5,5" Rows="A,A,A,*">
-        
+
+        <ProgressRing x:Name="uiProcesuje" Grid.RowSpan="4" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+
+
         <!--<ProgressRing x:Name="uiProcesuje" Grid.RowSpan="4" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />-->
 
         <TextBlock Text="Szukanie info o leku" HorizontalAlignment="Center" FontSize="20" Margin="0,0,0,20" />
@@ -50,10 +53,12 @@
                         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding sKodATC, Mode=OneWay }" /> -->
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding sPostac, Mode=OneWay }" />
                         <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding sMoc, Mode=OneWay }" />
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding sPozwolenie, Mode=OneWay }" />
-                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding sWaznosc, Mode=OneWay }" />
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding sPozwolenie, Mode=OneWay }" ToolTipService.ToolTip="pozwolenie"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding sWaznosc, Mode=OneWay }" ToolTipService.ToolTip="ważność pozwolenia"/>
                         <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding sPodmiot, Mode=OneWay }" />
-                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding sProcedura, Mode=OneWay }" />
+
+                        <local:UCprocedura Grid.Row="5" Grid.Column="1" Text="{Binding sProcedura, Mode=OneWay }" />
+                        <!--<TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding sProcedura, Mode=OneWay }" ToolTipService.ToolTip="procedura dopuszczenia"/>-->
 
                         <Grid.ContextFlyout>
                             <MenuFlyout>
@@ -83,8 +88,8 @@
                         <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding sMoc, Mode=OneWay }" />
                         <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding sKodATC, Mode=OneWay }" />
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding sPozwolenie, Mode=OneWay }" />
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding sWaznosc, Mode=OneWay }" />
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding sPozwolenie, Mode=OneWay }" ToolTipService.ToolTip="pozwolenie"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding sWaznosc, Mode=OneWay }" ToolTipService.ToolTip="ważność pozwolenia"/>
                         <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding sPodmiot, Mode=OneWay }" />
                         <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding sProcedura, Mode=OneWay }" />
 

@@ -80,6 +80,8 @@ Public Class UCtypLeku
 
         _inZmianaKontekst = True
         _Slider.Value = pud.iTypLeku
+        ' bez tego nie wywołuje changed :) a to właśnie tam są robione kolorki, tylko żeby się nie zapętlić...
+        SliderChanged(sender, Nothing)
         _inZmianaKontekst = False
     End Sub
 

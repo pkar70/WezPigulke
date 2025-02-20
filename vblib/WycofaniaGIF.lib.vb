@@ -4,6 +4,7 @@
 Imports System.Net
 Imports System.Net.Http.Headers
 Imports System.Runtime.CompilerServices
+
 Imports pkar
 Imports pkar.DotNetExtensions
 
@@ -27,7 +28,7 @@ Public Class WycofaniaGIF
     ''' wczytuje z sieci decyzje od ostatniej wczytanej - wymaga więc sieci :) . Zapisuje zmieniony cache.
     ''' </summary>
     ''' <param name="maxCount">Ile maksymalnie decyzji może wczytać</param>
-    Public Async Function ImportNewDecyzje(maxCount As Integer) As Task
+    Public Async Function ImportNewDecyzje(maxCount As Integer) As Task(Of String)
         ' https://rdg.ezdrowie.gov.pl/ - na tej stronie jest ostatnie 25 decyzji, w tym wycofań
 
         Dim decNum As Integer
@@ -41,6 +42,7 @@ Public Class WycofaniaGIF
 
         Dim bAdded As Boolean
 
+        Dim retMsg As String = ""
 
         Do
             Dim decyzja As ImportowanaDecyzja = Await DownloadDecyzja(decNum)
@@ -48,7 +50,7 @@ Public Class WycofaniaGIF
             If decyzja Is Nothing Then
                 Debug.WriteLine($"Decyzji {decNum} już nie ma, zapisuję plik")
                 If bAdded Then _wycofania.Save()
-                Return
+                Return retMsg
             End If
 
             Debug.WriteLine($"Decyzja {decNum}: {decyzja.decyzja} dla {decyzja.nazwa}, guard={maxCount}")
@@ -56,6 +58,9 @@ Public Class WycofaniaGIF
             If decyzja.data IsNot Nothing Then
                 _wycofania.Add(decyzja)
                 bAdded = True
+
+                retMsg &= $"{decyzja.decyzja} dla '{decyzja.nazwa}'" & vbCrLf
+
             End If
 
             decNum += 1
@@ -64,7 +69,7 @@ Public Class WycofaniaGIF
             If maxCount < 0 Then
                 Debug.WriteLine($"Guard zareagował, zapisuję plik")
                 If bAdded Then _wycofania.Save()
-                Return
+                Return retMsg
             End If
 
             Await Task.Delay(100)
@@ -73,7 +78,10 @@ Public Class WycofaniaGIF
         'Dim cosik = Await ImportDecyzja("4577")
         'Dim cosik1 = Await ImportDecyzja("4588")    ' tego jeszcze nie ma
 
+        Return retMsg
+
     End Function
+
 
     Public Function CheckEAN(ean As String) As GIFstatus
 
@@ -90,6 +98,56 @@ Public Class WycofaniaGIF
         Next
 
         Return GIFstatus.NoInfo
+    End Function
+
+    Public Function CheckEAN(lek As JednoPudelko) As GIFstatus
+
+        Dim status As GIFstatus = CheckEAN(lek.sBarcode)
+        If status <> GIFstatus.NoInfo Then Return status
+
+        If String.IsNullOrWhiteSpace(lek.sOpakowania) Then Return status
+        ' 05909990062928
+        ' 0590999.......
+        For Each kod As System.Text.RegularExpressions.Match In Text.RegularExpressions.Regex.Matches(lek.sOpakowania, "0590999[0-9][0-9][0-9][0-9][0-9][0-9][0-9]")
+            status = CheckEAN(kod.Value)
+            If status <> GIFstatus.NoInfo Then Return status
+        Next
+
+        Return GIFstatus.NoInfo
+
+    End Function
+
+    Public Function GetDecyzjaUri(ean As String) As Uri
+
+        If ean.NotStartsWith("0") Then ean = "0" & ean
+
+        For iLp As Integer = _wycofania.Count - 1 To 0 Step -1
+            Dim decyzja As ImportowanaDecyzja = _wycofania.Item(iLp)
+            If decyzja.gtin = ean Then
+                Return New Uri($"https://rdg.ezdrowie.gov.pl/Decision/Decision?id={decyzja.nr}")
+            End If
+        Next
+
+        Return Nothing
+    End Function
+
+
+    Public Function GetDecyzjaUri(lek As JednoPudelko) As Uri
+
+        Dim linek As Uri = GetDecyzjaUri(lek.sBarcode)
+        If linek IsNot Nothing Then Return linek
+
+        If String.IsNullOrWhiteSpace(lek.sOpakowania) Then Return Nothing
+
+        ' 05909990062928
+        ' 0590999.......
+        For Each kod As System.Text.RegularExpressions.Match In Text.RegularExpressions.Regex.Matches(lek.sOpakowania, "0590999[0-9][0-9][0-9][0-9][0-9][0-9][0-9]")
+            linek = GetDecyzjaUri(kod.Value)
+            If linek IsNot Nothing Then Return linek
+        Next
+
+        Return Nothing
+
     End Function
 
 #Region "prywatności"

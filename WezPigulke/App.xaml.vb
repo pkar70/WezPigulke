@@ -1,44 +1,11 @@
-﻿Imports pkar
-'Imports vblib
-Imports pkar.UI.Triggers
+﻿
+Imports System.ServiceModel.Channels
+Imports pkar
 Imports pkar.Localize
-Imports vblib
-Imports pkar.UI.Toasts
-
-''' <summary>
-''' Provides application-specific behavior to supplement the default Application class.
-''' </summary>
+Imports Windows.Data
+Imports Windows.UI.Notifications
 Partial NotInheritable Class App
     Inherits Application
-
-#Region "wizardowe"
-
-
-    Protected Function OnLaunchFragment(aes As ApplicationExecutionState) As Frame
-        Dim mRootFrame As Frame = TryCast(Window.Current.Content, Frame)
-
-        ' Do not repeat app initialization when the Window already has content,
-        ' just ensure that the window is active
-
-        If mRootFrame Is Nothing Then
-            ' Create a Frame to act as the navigation context and navigate to the first page
-            mRootFrame = New Frame()
-
-            AddHandler mRootFrame.NavigationFailed, AddressOf OnNavigationFailed
-
-            ' PKAR added wedle https://stackoverflow.com/questions/39262926/uwp-hardware-back-press-work-correctly-in-mobile-but-error-with-pc
-            AddHandler mRootFrame.Navigated, AddressOf OnNavigatedAddBackButton
-            AddHandler Windows.UI.Core.SystemNavigationManager.GetForCurrentView().BackRequested, AddressOf OnBackButtonPressed
-
-            ' Place the frame in the current Window
-            Window.Current.Content = mRootFrame
-        End If
-
-        pkar.InitLib(Nothing, False)
-
-        Return mRootFrame
-    End Function
-
 
     ''' <summary>
     ''' Invoked when the application is launched normally by the end user.  Other entry points
@@ -47,16 +14,36 @@ Partial NotInheritable Class App
     ''' </summary>
     ''' <param name="e">Details about the launch request and process.</param>
     Protected Overrides Sub OnLaunched(e As Windows.ApplicationModel.Activation.LaunchActivatedEventArgs)
-        Dim RootFrame As Frame = OnLaunchFragment(e.PreviousExecutionState)
+        Dim rootFrame As Frame = TryCast(Window.Current.Content, Frame)
 
-        WczytajZestawyLubImportuj().Wait()
+        ' Do not repeat app initialization when the Window already has content,
+        ' just ensure that the window is active
+
+        If rootFrame Is Nothing Then
+            ' Create a Frame to act as the navigation context and navigate to the first page
+            rootFrame = New Frame()
+
+            AddHandler rootFrame.NavigationFailed, AddressOf OnNavigationFailed
+
+            ' PKAR added wedle https://stackoverflow.com/questions/39262926/uwp-hardware-back-press-work-correctly-in-mobile-but-error-with-pc
+            AddHandler rootFrame.Navigated, AddressOf OnNavigatedAddBackButton
+            AddHandler Windows.UI.Core.SystemNavigationManager.GetForCurrentView().BackRequested, AddressOf OnBackButtonPressed
+
+            If e.PreviousExecutionState = ApplicationExecutionState.Terminated Then
+                ' TODO: Load state from previously suspended application
+            End If
+            ' Place the frame in the current Window
+            Window.Current.Content = rootFrame
+        End If
+
+        pkar.InitLib(Nothing, False)
 
         If e.PrelaunchActivated = False Then
-            If RootFrame.Content Is Nothing Then
+            If rootFrame.Content Is Nothing Then
                 ' When the navigation stack isn't restored navigate to the first page,
                 ' configuring the new page by passing required information as a navigation
                 ' parameter
-                RootFrame.Navigate(GetType(MainPage), e.Arguments)
+                rootFrame.Navigate(GetType(MainPage), e.Arguments)
             End If
 
             ' Ensure the current window is active
@@ -64,13 +51,6 @@ Partial NotInheritable Class App
         End If
 
     End Sub
-
-
-    ' obsluga lokalnych komend
-    Private Async Function AppServiceLocalCommand(sCommand As String) As Task(Of String)
-        Return ""
-    End Function
-
 
     ''' <summary>
     ''' Invoked when Navigation to a certain page fails
@@ -94,16 +74,10 @@ Partial NotInheritable Class App
         deferral.Complete()
     End Sub
 
-#End Region
-
-
-#Region "wczytywanie plików"
-
-
     Public Shared Async Function GetRoamingFile(sName As String, bCreate As Boolean) As Task(Of Windows.Storage.StorageFile)
         Dim oFold As Windows.Storage.StorageFolder = Windows.Storage.ApplicationData.Current.RoamingFolder
         If oFold Is Nothing Then
-            Await vblib.MsgBoxAsync("errNoRoamFolder")
+            Await vblib.DialogBoxResAsync("errNoRoamFolder")
             Return Nothing
         End If
 
@@ -125,184 +99,60 @@ Partial NotInheritable Class App
         Return oFile
     End Function
 
-
-    'Private Shared bZestawyDirty As Boolean
-
-    Public Shared Async Function WczytajZestawyLubImportuj() As Task
+    Public Shared Sub WczytajZestawyLubImportuj(bUpdateTimers As Boolean)
 
         vblib.globalsy.glZestawy = New BaseList(Of vblib.JedenZestaw)(Windows.Storage.ApplicationData.Current.RoamingFolder.Path, "zestawy.json")
-        Try
-            vblib.globalsy.glZestawy.Load()
+        vblib.globalsy.glZestawy.Load()
 
-            If vblib.globalsy.glZestawy.Count < 1 Then
-                'Await ZestawyFileImportXML()
-            End If
+        If bUpdateTimers Then vblib.globalsy.ZestawyUpdateTimers()
+    End Sub
 
-            vblib.globalsy.ZestawyUpdateTimers()
-        Catch ex As Exception
+    Public Async Function AppServiceLocalCommand(sCmd As String) As Task(Of String)
+        Return "OK"
+    End Function
 
-        End Try
+    Public Shared Async Function ImportNewDecyzje() As Task
 
+        If vblib.globalsy.glWycofaniaGIF Is Nothing Then Return
+        Dim msg As String = Await vblib.globalsy.glWycofaniaGIF.ImportNewDecyzje(100)
+        If msg.Length < 5 Then Return
+
+        If Not vblib.GetSettingsBool("uiToastForAll") Then Return
+
+        ' *TODO* toast z tego
+        Dim sXml = $"<visual><binding template='ToastGeneric'>
+<text>Nowe decyzje GIF:</text>
+<text>{msg}</text></binding></visual>"
+        Dim oXml = New Windows.Data.Xml.Dom.XmlDocument
+        oXml.LoadXml("<toast>" & sXml & "</toast>")
+        Dim oToast = New ToastNotification(oXml)
+        ToastNotificationManager.CreateToastNotifier().Show(oToast)
     End Function
 
 
-    'Public Shared Async Function ZestawyFileImportXML() As Task(Of Boolean)
-
-    '    Try
-
-    '        Dim glZestawy = New Collection(Of vblib.JedenZestaw)
-    '        Dim oFile As Windows.Storage.StorageFile = Await App.GetRoamingFile("zestawy.xml", False)
-    '        If oFile Is Nothing Then Return True    ' czyli jest OK
-
-    '        Dim oSer As Xml.Serialization.XmlSerializer =
-    '            New Xml.Serialization.XmlSerializer(GetType(Collection(Of vblib.JedenZestaw)))
-    '        Dim oStream As Stream = Await oFile.OpenStreamForReadAsync
-    '        Dim bError As Boolean = False
-    '        Try
-    '            glZestawy = TryCast(oSer.Deserialize(oStream), Collection(Of vblib.JedenZestaw))
-    '        Catch ex As Exception
-    '            bError = True
-    '        End Try
-    '        oStream.Dispose()
-    '        oStream = Nothing
-    '        oSer = Nothing
-    '        oFile = Nothing
-    '        'bZestawyDirty = False
-
-    '        For Each oZestaw As vblib.JedenZestaw In glZestawy
-    '            vblib.globalsy.glZestawy.Add(oZestaw)
-    '        Next
-
-    '        vblib.globalsy.glZestawy.Save()
-
-    '        Return Not bError
-    '    Catch ex As Exception
-    '        Return False
-    '    End Try
-
-    'End Function
-
-
-
-    'Public Shared Async Function ZnaneSubstancjeImportXML() As Task(Of Boolean)
-    '    Dim glZnaneSubstancje = New Collection(Of vblib.JednaSubstancja)
-
-    '    Dim oFile As Windows.Storage.StorageFile = Await App.GetRoamingFile("substancje.xml", False)
-    '    If oFile Is Nothing Then Return True    ' czyli jest OK
-
-    '    Dim oSer As Xml.Serialization.XmlSerializer =
-    '            New Xml.Serialization.XmlSerializer(GetType(Collection(Of vblib.JednaSubstancja)))
-    '    Dim oStream As Stream = Await oFile.OpenStreamForReadAsync
-    '    Dim bError As Boolean = False
-    '    Try
-    '        glZnaneSubstancje = TryCast(oSer.Deserialize(oStream), Collection(Of vblib.JednaSubstancja))
-    '    Catch ex As Exception
-    '        bError = True
-    '    End Try
-    '    oStream.Dispose()
-    '    oStream = Nothing
-
-    '    If bError Then Return False
-
-    '    For Each subst As vblib.JednaSubstancja In glZnaneSubstancje
-    '        vblib.globalsy.glZnaneSubstancje.Add(subst)
-    '    Next
-    '    vblib.globalsy.glZnaneSubstancje.Save()
-
-    '    'For Each oItem As JednoPudelko In glZnanePudelka
-    '    '    oItem.bStaly = (oItem.iTypLeku > 0)
-    '    '    oItem.bIncludeInteraction = oItem.bStaly
-    '    'Next
-
-    '    Return True
-    'End Function
-
-
-    'Public Shared Async Function ZnanePudelkaImportXML() As Task(Of Boolean)
-    '    Dim glZnanePudelka = New Collection(Of vblib.JednoPudelko)
-
-    '    Dim oFile As Windows.Storage.StorageFile = Await App.GetRoamingFile("pudelka.xml", False)
-    '    If oFile Is Nothing Then Return True    ' czyli jest OK
-
-    '    Dim oSer As Xml.Serialization.XmlSerializer =
-    '            New Xml.Serialization.XmlSerializer(GetType(Collection(Of vblib.JednoPudelko)))
-    '    Dim oStream As Stream = Await oFile.OpenStreamForReadAsync
-    '    Dim bError As Boolean = False
-    '    Try
-    '        glZnanePudelka = TryCast(oSer.Deserialize(oStream), Collection(Of vblib.JednoPudelko))
-    '    Catch ex As Exception
-    '        bError = True
-    '    End Try
-    '    oStream.Dispose()
-    '    oStream = Nothing
-
-    '    If bError Then Return False
-
-    '    For Each oPud As vblib.JednoPudelko In glZnanePudelka
-    '        ' odtworzenie ID
-    '        Dim iInd As Integer = oPud.sDetailsLink.LastIndexOf("=")
-    '        oPud.IDrpl = oPud.sDetailsLink.Substring(iInd + 1)
-
-    '        vblib.globalsy.glZnanePudelka.Add(oPud)
-
-    '    Next
-
-    '    'For Each oItem As JednoPudelko In glZnanePudelka
-    '    '    oItem.bStaly = (oItem.iTypLeku > 0)
-    '    '    oItem.bIncludeInteraction = oItem.bStaly
-    '    'Next
-
-    '    Return True
-    'End Function
-
-
-
-#End Region
-
-
-
-
-
-
-
-    'Public Shared Function PlayAlarm() As Task
-    '    ' tu wlacz granie w petli
-    '    Dim oMediaPlayer As Windows.Media.Playback.MediaPlayer =
-    '                        New Windows.Media.Playback.MediaPlayer()
-    '    oMediaPlayer.IsLoopingEnabled = True
-    '    oMediaPlayer.Source = Windows.Media.Core.MediaSource.CreateFromUri(New Uri("ms-appx:///Assets/TimerAlarm.mp3"))
-    '    oMediaPlayer.Play()
-    'End Function
-
 #Region "triggers"
 
-    'Public Shared Sub UnregisterTriggers()
-    '    For Each oTask As KeyValuePair(Of Guid, Background.IBackgroundTaskRegistration) In Background.BackgroundTaskRegistration.AllTasks
-    '        If oTask.Value.Name.StartsWith("WezPigulke") Then oTask.Value.Unregister(True)
-    '    Next
-    'End Sub
+    Public Shared Sub UnregisterTriggers(Optional sPrefix As String = "WezPigulke")
+        For Each oTask As KeyValuePair(Of Guid, Background.IBackgroundTaskRegistration) In Background.BackgroundTaskRegistration.AllTasks
+            If oTask.Value.Name.StartsWith(sPrefix) Then oTask.Value.Unregister(True)
+        Next
+    End Sub
 
-    ''' <summary>
-    ''' Ten trigger robi w nocy reschedule Toastów (tak na wszelki wypadek)
-    ''' </summary>
+
     Public Shared Async Function TriggerNocnyReschedule() As Task
-
-        UnregisterTriggers("WezPigulkeRescheduleToast")
-
-        'For Each oTask As KeyValuePair(Of Guid, Background.IBackgroundTaskRegistration) In Background.BackgroundTaskRegistration.AllTasks
-        '    If oTask.Value.Name = "WezPigulkeRescheduleToast" Then oTask.Value.Unregister(True)
-        'Next
+        For Each oTask As KeyValuePair(Of Guid, Background.IBackgroundTaskRegistration) In Background.BackgroundTaskRegistration.AllTasks
+            If oTask.Value.Name = "WezPigulkeRescheduleToast" Then oTask.Value.Unregister(True)
+        Next
 
         If Not vblib.GetSettingsBool("dailyReschedule") Then Return
 
-        'Dim oBAS As Background.BackgroundAccessStatus
-        'oBAS = Await Background.BackgroundExecutionManager.RequestAccessAsync()
+        Dim oBAS As Background.BackgroundAccessStatus
+        oBAS = Await Background.BackgroundExecutionManager.RequestAccessAsync()
 
-        'Dim builder As Background.BackgroundTaskBuilder = New Background.BackgroundTaskBuilder
-        'Dim oRet As Background.BackgroundTaskRegistration
+        Dim builder As Background.BackgroundTaskBuilder = New Background.BackgroundTaskBuilder
+        Dim oRet As Background.BackgroundTaskRegistration
 
-        If Await CanRegisterTriggersAsync() Then
-            ' If oBAS = Background.BackgroundAccessStatus.AlwaysAllowed Or oBAS = Background.BackgroundAccessStatus.AllowedSubjectToSystemPolicy Then
+        If oBAS = Background.BackgroundAccessStatus.AlwaysAllowed Or oBAS = Background.BackgroundAccessStatus.AllowedSubjectToSystemPolicy Then
             Dim oTS As TimeSpan
             If Not TimeSpan.TryParse(vblib.GetSettingsString("rescheduleTime", "03:00"), oTS) Then
                 oTS = New TimeSpan(3, 0, 0)
@@ -310,10 +160,35 @@ Partial NotInheritable Class App
 
             Dim oDate As Date = New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, oTS.Hours, oTS.Minutes, 0)
             If oDate < Date.Now Then oDate = oDate.AddDays(1)
-            ' builder.SetTrigger(New Background.TimeTrigger((oDate - Date.Now).TotalMinutes, True))
-            ' builder.Name = "WezPigulkeRescheduleToast"
-            ' oRet = builder.Register()
-            RegisterTimerTrigger("WezPigulkeRescheduleToast", (oDate - Date.Now).TotalMinutes, True)
+            builder.SetTrigger(New Background.TimeTrigger((oDate - Date.Now).TotalMinutes, True))
+            builder.Name = "WezPigulkeRescheduleToast"
+            oRet = builder.Register()
+        End If
+
+    End Function
+
+    Public Shared Async Function RegisterTriggers() As Task(Of Boolean)
+        UnregisterTriggers()
+
+        Dim oBAS As Background.BackgroundAccessStatus
+        oBAS = Await Background.BackgroundExecutionManager.RequestAccessAsync()
+
+
+        ' https://docs.microsoft.com/en-us/windows/uwp/launch-resume/create-And-register-an-inproc-background-task
+        Dim builder As Background.BackgroundTaskBuilder = New Background.BackgroundTaskBuilder
+        Dim oRet As Background.BackgroundTaskRegistration
+
+        If oBAS = Background.BackgroundAccessStatus.AlwaysAllowed Or oBAS = Background.BackgroundAccessStatus.AllowedSubjectToSystemPolicy Then
+            builder.SetTrigger(New Background.ToastNotificationActionTrigger)
+            builder.Name = "WezPigulkeToast"
+            oRet = builder.Register()
+            builder.SetTrigger(New Background.AppointmentStoreNotificationTrigger)
+            builder.Name = "WezPigulkeCalUpdate"
+
+            Await TriggerNocnyReschedule()
+            Return True
+        Else
+            Return False
         End If
 
     End Function
@@ -336,39 +211,36 @@ Partial NotInheritable Class App
 
     End Function
 
+    Public Shared Async Function CanRegisterTriggersAsync() As Task(Of Boolean)
+        Dim oBAS As Background.BackgroundAccessStatus
+        oBAS = Await Background.BackgroundExecutionManager.RequestAccessAsync()
 
+        If oBAS = Background.BackgroundAccessStatus.AlwaysAllowed Then Return True
+        If oBAS = Background.BackgroundAccessStatus.AllowedSubjectToSystemPolicy Then Return True
 
-    Public Shared Async Function RegisterTriggers() As Task(Of Boolean)
-
-        UnregisterTriggers("") ' bo WezPigulke stąd, oraz regionalizowana np. TakeAPill
-
-        'Dim oBAS As Background.BackgroundAccessStatus
-        'oBAS = Await Background.BackgroundExecutionManager.RequestAccessAsync()
-
-
-        '' https://docs.microsoft.com/en-us/windows/uwp/launch-resume/create-And-register-an-inproc-background-task
-        Dim builder As Background.BackgroundTaskBuilder = New Background.BackgroundTaskBuilder
-        'Dim oRet As Background.BackgroundTaskRegistration
-
-        If Await CanRegisterTriggersAsync() Then
-            'If oBAS = Background.BackgroundAccessStatus.AlwaysAllowed Or oBAS = Background.BackgroundAccessStatus.AllowedSubjectToSystemPolicy Then
-            RegisterToastTrigger("WezPigulkeToast")
-            'builder.SetTrigger(New Background.ToastNotificationActionTrigger)
-            'builder.Name = "WezPigulkeToast"
-            'oRet = builder.Register()
-            builder.SetTrigger(New Background.AppointmentStoreNotificationTrigger)
-            builder.Name = "WezPigulkeCalUpdate"
-
-            Await TriggerNocnyReschedule()
-
-
-            Return True
-        Else
-            Return False
-        End If
-
+        Return False
 
     End Function
+
+    Public Shared Function RegisterTimerTrigger(name As String, freshnessMinutes As Integer, oneShot As Boolean, Optional condition As Background.SystemCondition = Nothing) As Background.BackgroundTaskRegistration
+
+        Try
+            Dim builder As New Background.BackgroundTaskBuilder
+            Dim oRet As Background.BackgroundTaskRegistration
+
+            builder.SetTrigger(New Background.TimeTrigger(freshnessMinutes, oneShot))
+            builder.Name = name
+            If condition IsNot Nothing Then builder.AddCondition(condition)
+            oRet = builder.Register()
+            Return oRet
+        Catch ex As Exception
+            ' brak możliwości rejestracji (na przykład)
+        End Try
+
+        Return Nothing
+    End Function
+
+
 
     Dim moTimerDeferal As Background.BackgroundTaskDeferral
 
@@ -379,6 +251,14 @@ Partial NotInheritable Class App
         If Not Await CalledFromBackground(args.TaskInstance) Then
             moTimerDeferal.Complete()   ' gdy to byl RemoteSystem, to nie dereferuj
         End If
+
+        'If rootFrame IsNot Nothing Then
+        '    MakeToast("onbackground rootframe", "onbackground rootframe", "onbackground rootframe")
+        '    Dim oMain As MainPage = TryCast(rootFrame.Content, MainPage)
+        '    If oMain IsNot Nothing Then Await oMain.CalledFromBackground(args.TaskInstance)
+        'Else
+        '    MakeToast("onbackground NULL", "onbackground NULL", "onbackground NULL")
+        'End If
 
     End Sub
 
@@ -418,7 +298,7 @@ Partial NotInheritable Class App
             oCalendars = Await oStore.FindAppointmentsAsync(Date.Now, TimeSpan.FromDays(7), oCalOpt)
             If oCalendars Is Nothing Then Return ""
         Catch ex As Exception
-            vblib.CrashMessageAdd("@AkcjeSnoozeWedleKalendarza part 1", ex.Message)
+            CrashMessageAdd("@AkcjeSnoozeWedleKalendarza part 1", ex.Message)
             Return ""
         End Try
 
@@ -493,7 +373,7 @@ Partial NotInheritable Class App
 
             If bFirst Then Return ""
         Catch ex As Exception
-            vblib.CrashMessageAdd("@AkcjeSnoozeWedleKalendarza For/Next", ex.Message)
+            CrashMessageAdd("@AkcjeSnoozeWedleKalendarza For/Next", ex.Message)
         End Try
 
         ' mamy juz daty poustawiane, teraz dodaj akcje
@@ -583,10 +463,6 @@ Partial NotInheritable Class App
 
     End Function
 
-
-#Region "tworzenie toastu"
-
-
     Public Shared Async Function AkcjeSnoozeList(oItem As vblib.JedenZestaw, sActionId As String, bUseCalendar As Boolean, bCanModifyTime As Boolean) As Task(Of String)
         Dim sActions As String
 
@@ -646,7 +522,7 @@ Partial NotInheritable Class App
                 TimeSpan.FromMinutes(vblib.GetSettingsInt("defaultSnoozeTime", 15)), 5)
             Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier().AddToSchedule(oToast)
         Catch ex As Exception
-            vblib.CrashMessageAdd("@DodajTestowyToast.Add", ex.Message)
+            CrashMessageAdd("@DodajTestowyToast.Add", ex.Message)
         End Try
     End Sub
 
@@ -660,7 +536,7 @@ Partial NotInheritable Class App
     End Function
     Public Shared Async Function DodajToast(oItem As vblib.JedenZestaw, bUseCalendar As Boolean, bCanModifyTime As Boolean) As Task
         Dim sXml As String = "<visual><binding template=""ToastGeneric"">" &
-            "<text>" & GetResManString("resToastTitle") & ":</text><text>" & oItem.sNazwaZestawu & "</text></binding></visual>" &
+            "<text>" & vblib.GetSettingsString("resToastTitle") & ":</text><text>" & oItem.sNazwaZestawu & "</text></binding></visual>" &
             "<actions>"
         ' & " (@ " & Date.Now.ToString("MMdd.HH:mm:ss") 
 
@@ -704,7 +580,7 @@ Partial NotInheritable Class App
 
         Dim oDate As DateTimeOffset = oItem.oNextTime
         If oDate < Date.Now.AddMinutes(5) Then
-            vblib.CrashMessageAdd("@DodajToast", oItem.sNazwaZestawu & " - zbyt wczesna data")
+            CrashMessageAdd("@DodajToast", oItem.sNazwaZestawu & " - zbyt wczesna data")
             oDate = Date.Now.AddMinutes(10)
         End If
 
@@ -719,25 +595,24 @@ Partial NotInheritable Class App
             oToast.Id = sTmp
             Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier().AddToSchedule(oToast)
         Catch ex As Exception
-            vblib.CrashMessageAdd("@DodajToast.Add", ex.Message)
+            CrashMessageAdd("@DodajToast.Add", ex.Message)
         End Try
         'Dim oToast = New Windows.UI.Notifications.ScheduledToastNotification(oXml, Date.Now.AddDays(1),
         '        TimeSpan.FromMinutes(GetSettingsInt("defaultSnoozeTime", 15)), 5)
 
     End Function
 
-    'Public Shared Sub UsunToasty()
-    '    Dim oNotifier = Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier()
-    '    Dim oScheduled = oNotifier.GetScheduledToastNotifications()
-    '    For i = 0 To oScheduled.Count - 1
-    '        oNotifier.RemoveFromSchedule(oScheduled.Item(i))
-    '    Next
-    'End Sub
-#End Region
+    Public Shared Sub UsunToasty()
+        Dim oNotifier = Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier()
+        Dim oScheduled = oNotifier.GetScheduledToastNotifications()
+        For i = 0 To oScheduled.Count - 1
+            oNotifier.RemoveFromSchedule(oScheduled.Item(i))
+        Next
+    End Sub
 
 
     Public Shared Async Function ZaplanujToasty() As Task
-        UI.Toasts.RemoveScheduledToasts()  'UsunToasty()
+        UsunToasty()
         For Each oItem As vblib.JedenZestaw In vblib.globalsy.glZestawy
             If oItem.oNextTime.Year > 9000 Then Continue For
             If Not oItem.bEnabled Then Continue For
@@ -745,7 +620,7 @@ Partial NotInheritable Class App
             Await App.DodajToast(oItem, True, True)
             ' DodajToast(oItem.sNazwaZestawu, oItem.oNextTime.Value.AddMinutes(oItem.iDelayMins))
         Next
-        vblib.globalsy.glZestawy.Save() 'ZestawySave(False) ' tu przeniesione (wcześniej: w AkcjeWedleKalendarza, bo się iDelay tam zmienia
+        vblib.globalsy.glZestawy.Save() 'Await ZestawySave(False) ' tu przeniesione (wcześniej: w AkcjeWedleKalendarza, bo się iDelay tam zmienia
     End Function
 
     Public Shared Async Function WzialemPigulke(sId As String, sTakeTime As String) As Task
@@ -764,16 +639,17 @@ Partial NotInheritable Class App
 
     End Function
 
-    'Private moAppConn As AppService.AppServiceConnection
+    ' Private moAppConn As AppService.AppServiceConnection
+
+
 
     Public Async Function CalledFromBackground(oTask As Windows.ApplicationModel.Background.IBackgroundTaskInstance) As Task(Of Boolean)
 
-        pkar.InitLib(Nothing, False)
-        Await WczytajZestawyLubImportuj()
+        If vblib.globalsy.glZestawy Is Nothing Then
+            WczytajZestawyLubImportuj(False)
+        End If
 
         If vblib.globalsy.glZestawy.Count < 1 Then Return True
-
-        'If Not Await ZestawyLoad() Then Return False
 
         Select Case oTask.Task.Name     '  sTaskname
             Case "WezPigulkeRescheduleToast"
@@ -786,7 +662,7 @@ Partial NotInheritable Class App
                     ' przeliczenie wszystkiego
                     vblib.globalsy.Dawkowanie2NextTime(True)
                     Await ZaplanujToasty()
-                    vblib.globalsy.glZestawy.Save() ' Await ZestawySave(False) ' jakby byly zmiany
+                    vblib.globalsy.glZestawy.Save()  'Await ZestawySave(False) ' jakby byly zmiany
                 End If
             Case "WezPigulkeToast"
                 Dim oDetails As Windows.UI.Notifications.ToastNotificationActionTriggerDetail = oTask.TriggerDetails
@@ -834,31 +710,15 @@ Partial NotInheritable Class App
                                         oItem.oNextTime = oItem.oNextOrgTime
 
                                         Await DodajToast(oItem, False, False)
+                                        'Await ZestawySave(True)     ' bez zapisywania gdy sie nic nie zmieniło
                                     End If
 
                                     Exit For ' nawet jak aArr(1) <> (czyli zmiana już nastąpiła), to i tak skoncz szukanie
                                 End If
                             Next
-                            vblib.globalsy.glZestawy.Save() ' (True)     ' bez zapisywania gdy sie nic nie zmieniło
-
+                            vblib.globalsy.glZestawy.Save()
                     End Select
                 End If
-
-
-            Case "WezPigulkeWycofaniaTrigger"
-                If vblib.globalsy.glWycofaniaGIF Is Nothing Then
-                    vblib.globalsy.glWycofaniaGIF = New vblib.WycofaniaGIF(Windows.Storage.ApplicationData.Current.RoamingFolder.Path)
-                    vblib.globalsy.glWycofaniaGIF.LoadCache()
-                End If
-
-                Await vblib.globalsy.glWycofaniaGIF.ImportNewDecyzje(25)
-
-                Dim trafienia As String = vblib.globalsy.SprawdzWycofania(True)
-                If Not String.IsNullOrWhiteSpace(trafienia) Then
-                    Toasts.MakeToast("Zmiany statusu leków:" & vbCrLf & trafienia)
-                End If
-                Await TriggerWycofaniaReschedule()
-
             Case Else       ' to moze remote system
                 If vblib.GetSettingsBool("allowRemoteSystem") Then
                     Dim oDetails As AppService.AppServiceTriggerDetails =
@@ -920,17 +780,10 @@ Partial NotInheritable Class App
                     sResult = Package.Current.Id.Version.Major & "." &
                         Package.Current.Id.Version.Minor & "." & Package.Current.Id.Version.Build
                 Case "getzestawy"
-                    Dim oSer As Xml.Serialization.XmlSerializer = New Xml.Serialization.XmlSerializer(GetType(Collection(Of vblib.JedenZestaw)))
-                    Dim oStream As Stream = New MemoryStream
-                    oSer.Serialize(oStream, vblib.globalsy.glZestawy)
-                    oStream.Flush()
                     Try
                         sResult = "FILE"
 
-                        oStream.Seek(0, SeekOrigin.Begin)
-
-                        Dim oRdr As StreamReader = New StreamReader(oStream)
-                        Dim sTmp As String = oRdr.ReadToEnd
+                        Dim sTmp As String = vblib.globalsy.glZestawy.Export(True)
                         If sTmp.Length > 28000 Then
                             sResult = "ERROR: too much data"
                         Else
@@ -950,13 +803,13 @@ Partial NotInheritable Class App
                         ''oResultMsg.Add("content", oStream.CType(oBuff.ToArray, Byte()))
 
                     Catch ex As Exception
-                        vblib.CrashMessageAdd("@OnRequestReceived:getzestawy", ex.Message)
+                        CrashMessageAdd("@OnRequestReceived:getzestawy", ex.Message)
                     End Try
                 Case Else
                     sResult = "ERROR unknown command"
             End Select
         Catch ex As Exception
-            vblib.CrashMessageAdd("@OnRequestReceived outer Select", ex.Message)
+            CrashMessageAdd("@OnRequestReceived outer Select", ex.Message)
         End Try
 
         ' odsylamy cokolwiek - zeby "tamta strona" cos zobaczyla
@@ -967,11 +820,8 @@ Partial NotInheritable Class App
     End Sub
 
     Public Shared gsEAN As String = ""
-    'Public Shared glZnanePudelka As Collection(Of JednoPudelko)
-
 
 #End Region
-
 
 
 

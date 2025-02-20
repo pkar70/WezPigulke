@@ -1,7 +1,5 @@
-﻿Imports pkar.UI.Configs
-Imports pkar.UI.Extensions
-Imports pkar.UI
-Imports pkar.UI.Triggers
+﻿Imports pkar.UI.Extensions
+Imports pkar.UI.Configs
 
 Public NotInheritable Class Settings
     Inherits Page
@@ -28,12 +26,12 @@ Public NotInheritable Class Settings
         uiDailyReschedule_Toggled(Nothing, Nothing)
         uiIgnoreLocMask.Text = vblib.GetSettingsString("ignoreLocMask", "http|webmeet")
         uiCheckWycofania.GetSettingsBool
+        uiToastForAll.GetSettingsBool
 
         If IsThisMoje() Then uiToastList.Visibility = Visibility.Visible
     End Sub
 
     Private Async Sub uiOk_Click(sender As Object, e As RoutedEventArgs)
-
         uiIgnoreEmptyLoc.SetSettingsBool("ignoreEmptyLocationEvent")
         uiIgnoreNoReminder.SetSettingsBool("ignoreNoReminder")
         uiDefSnooze.SetSettingsInt("defaultSnoozeTime")
@@ -46,7 +44,7 @@ Public NotInheritable Class Settings
             If Await Me.DialogBoxYNAsync("msgShouldCreateToast") Then uiScheduleToast_Click(Nothing, Nothing)
         End If
         If Not uiGenerateToasts.IsOn AndAlso bOldToasts Then
-            If Await Me.DialogBoxYNAsync("msgShouldRemoveToast") Then Toasts.RemoveScheduledToasts()  'App.UsunToasty()
+            If Await Me.DialogBoxYNAsync("msgShouldRemoveToast") Then App.UsunToasty() ' Toasts.RemoveScheduledToasts()  'App.UsunToasty()
         End If
 
         uiEANitems.SetSettingsInt("maxScannedEANs")
@@ -59,8 +57,6 @@ Public NotInheritable Class Settings
         uiShowDebug.SetSettingsBool("showDebug")
         uiIgnoreLocMask.SetSettingsString("ignoreLocMask")
 
-
-
         bOldToasts = vblib.GetSettingsBool("uiCheckWycofania")
         uiCheckWycofania.SetSettingsBool
 
@@ -68,9 +64,9 @@ Public NotInheritable Class Settings
             Await App.TriggerWycofaniaReschedule
         End If
         If Not uiGenerateToasts.IsOn Then
-            UnregisterTriggers("WezPigulkeWycofaniaTrigger")
+            App.UnregisterTriggers() '("WezPigulkeWycofaniaTrigger")
         End If
-
+        uiToastForAll.SetSettingsBool
 
         Me.Frame.GoBack()
     End Sub
@@ -81,7 +77,7 @@ Public NotInheritable Class Settings
 
         ' App.DodajTestoweToasty()
 
-        Toasts.RemoveScheduledToasts() ' App.UsunToasty()
+        App.UsunToasty()
         If Not vblib.GetSettingsBool("generateToasts") Then
             If Not Await Me.DialogBoxYNAsync("msgPomimoWylaczenia") Then
                 uiScheduleToast.IsEnabled = True
@@ -89,21 +85,21 @@ Public NotInheritable Class Settings
             End If
         End If
         Await App.ZaplanujToasty()
-        Await Me.MsgBoxAsync("msgRescheduleDone")
+        Me.MsgBox("msgRescheduleDone")
         uiScheduleToast.IsEnabled = True
     End Sub
 
-    'Private Sub UiGenerateToasts_Toggled(sender As Object, e As RoutedEventArgs) Handles uiGenerateToasts.Toggled
-    '    Dim bEnabled As Boolean = uiGenerateToasts.IsOn
-    '    uiIgnoreEmptyLoc.IsEnabled = bEnabled
-    '    uiIgnoreNoReminder.IsEnabled = bEnabled
-    '    uiDefSnooze.IsEnabled = bEnabled
-    '    'uiToastCombo.IsEnabled = bEnabled
-    '    uiDailyReschedule.IsEnabled = bEnabled
-    'End Sub
+    Private Sub UiGenerateToasts_Toggled(sender As Object, e As RoutedEventArgs) Handles uiGenerateToasts.Toggled
+        Dim bEnabled As Boolean = uiGenerateToasts.IsOn
+        uiIgnoreEmptyLoc.IsEnabled = bEnabled
+        uiIgnoreNoReminder.IsEnabled = bEnabled
+        uiDefSnooze.IsEnabled = bEnabled
+        uiToastCombo.IsEnabled = bEnabled
+        uiDailyReschedule.IsEnabled = bEnabled
+    End Sub
 
-    Private Sub uiDailyReschedule_Toggled(sender As Object, e As RoutedEventArgs)
-        uiRescheduleTime.IsEnabled = uiDailyReschedule.IsOn AndAlso uiGenerateToasts.IsOn
+    Private Sub uiDailyReschedule_Toggled(sender As Object, e As RoutedEventArgs) Handles uiDailyReschedule.Toggled
+        uiRescheduleTime.IsEnabled = uiDailyReschedule.IsOn
     End Sub
 
     Private Sub uiToastList_Click(sender As Object, e As RoutedEventArgs)
@@ -117,7 +113,59 @@ Public NotInheritable Class Settings
             sTxt = "nothing scheduled??"
         End If
 
-
         Me.MsgBox(sTxt)
     End Sub
+
+    Private Async Sub uiSendEmail_Click(sender As Object, e As RoutedEventArgs)
+        Dim oMsg As New Windows.ApplicationModel.Email.EmailMessage()
+        oMsg.Subject = "dane z pigularza"
+
+        oMsg.Attachments.Add(New Email.EmailAttachment())
+
+        Dim sTxt As String = "Załączam dane z pigularza" & vbCrLf
+        'sTxt &= Await ReadRoamFile("zestawy.xml") & vbCrLf
+        'sTxt &= Await ReadRoamFile("pudelka.xml") & vbCrLf
+        'sTxt &= Await ReadRoamFile("substancje.xml") & vbCrLf
+        oMsg.Body = sTxt
+
+        Await AddAttachment(oMsg, "zestawy.xml")
+        Await AddAttachment(oMsg, "pudelka.xml")
+        Await AddAttachment(oMsg, "substancje.xml")
+
+        Await Email.EmailManager.ShowComposeNewEmailAsync(oMsg)
+
+    End Sub
+
+    Private Async Function ReadRoamFile(fname As String) As Task(Of String)
+
+        Dim ret As String = vbCrLf & $"plik {fname}: "
+
+        Dim oFile As Windows.Storage.StorageFile = Await App.GetRoamingFile(fname, False)
+
+        If oFile Is Nothing Then Return ret & "nie istnieje"
+
+
+        ret &= vbCrLf
+
+        Dim oStream As Stream = Await oFile.OpenStreamForReadAsync
+        Dim rdr As New StreamReader(oStream)
+
+        ret &= rdr.ReadToEnd
+
+        'rdr.Close()
+        rdr.Dispose()
+        oStream.Dispose()
+
+        Return ret
+    End Function
+
+    Private Async Function AddAttachment(oMsg As Windows.ApplicationModel.Email.EmailMessage, fname As String) As Task
+        Dim oFile As Windows.Storage.StorageFile = Await App.GetRoamingFile(fname, False)
+
+        If oFile Is Nothing Then Return
+
+        oMsg.Attachments.Add(New Email.EmailAttachment(fname, oFile))
+
+    End Function
+
 End Class

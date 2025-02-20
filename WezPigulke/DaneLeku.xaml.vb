@@ -1,4 +1,5 @@
-﻿Imports pkar.UI.Extensions
+﻿
+Imports pkar.UI.Extensions
 
 Public NotInheritable Class DaneLeku
     Inherits Page
@@ -28,7 +29,7 @@ Public NotInheritable Class DaneLeku
     End Function
 
     Private Sub Page_Loaded(sender As Object, e As RoutedEventArgs)
-        Me.InitDialogs
+        'Me.InitDialogs
 
         'oItem.sDawneOpakowania.Contains(msBarCode) Then
 
@@ -48,7 +49,7 @@ Public NotInheritable Class DaneLeku
 
     End Sub
 
-    Private Function GetPdfFilename(pudelko As vblib.JednoPudelko, bCharakt As Boolean)
+    Private Shared Function GetPdfFilename(pudelko As vblib.JednoPudelko, bCharakt As Boolean)
         If bCharakt Then
             Return pudelko.IDrpl & "-c.pdf"
         Else
@@ -61,7 +62,7 @@ Public NotInheritable Class DaneLeku
     ''' </summary>
     ''' <param name="fname"></param>
     ''' <returns></returns>
-    Private Async Function TryShowPdf(oFold As Windows.Storage.StorageFolder, fname As String) As Task(Of Boolean)
+    Private Shared Async Function TryShowPdf(oFold As Windows.Storage.StorageFolder, fname As String) As Task(Of Boolean)
 
         Dim oFile As Windows.Storage.StorageFile = Nothing
         ' Dim oCos = oFold.TryGetItemAsync(sIntNum & ".pdf")
@@ -73,23 +74,29 @@ Public NotInheritable Class DaneLeku
         Return True
     End Function
 
-    Private Async Sub PokazPDF(bCharakt As Boolean)
 
-        Dim fname As String = GetPdfFilename(ContextAsPudelko, bCharakt)
 
-        Dim oFold As Windows.Storage.StorageFolder = Windows.Storage.ApplicationData.Current.LocalFolder
-        If oFold Is Nothing Then
-            Me.MsgBox("ERROR: cannot open LocalFolder?")
-            Return
+    ''' <summary>
+    ''' Pokaż PDFa lub zainicjuj jego ściąganie; ret Empty lub errmessage
+    ''' </summary>
+    ''' <param name="oItem"></param>
+    ''' <param name="bCharakt">albo 'characteristic' albo 'leaflet'</param>
+    ''' <returns>Empty na OK, lub errmessage</returns>
+    Public Shared Async Function PokazPDF(oItem As vblib.JednoPudelko, bCharakt As Boolean) As Task(Of String)
+        If oItem Is Nothing Then Return "Bad call: PokazPDF(null...)"
+
+        Dim fname As String = GetPdfFilename(oItem, bCharakt)
+
+        Dim oFold As Windows.Storage.StorageFolder = Windows.Storage.ApplicationData.Current.LocalCacheFolder
+
+        If Await TryShowPdf(oFold, fname) Then Return ""
+
+        Dim oUri As New Uri($"https://rejestry.ezdrowie.gov.pl/api/rpl/medicinal-products/{oItem.IDrpl}/{If(bCharakt, "characteristic", "leaflet")}")
+
+        If Not vblib.GetSettingsBool("cacheDataHere") OrElse Not Await vblib.DialogBoxYNAsync("Ściągnąć plik?") Then
+            oUri.OpenBrowser
+            Return ""
         End If
-
-        If Await TryShowPdf(oFold, fname) Then Return
-
-        If Not vblib.GetSettingsBool("cacheDataHere") Then Return
-        If Not Await Me.DialogBoxYNAsync("Ściągnąć plik?") Then Return
-
-        Dim sUrl As String = "https://rejestry.ezdrowie.gov.pl/medicinal-products/33004/leaflet/" & ContextAsPudelko.IDrpl
-        sUrl &= If(bCharakt, "/characteristic", "/leaflet")
 
         Dim bErr As Boolean = False
         Dim oFile As Windows.Storage.StorageFile = Nothing
@@ -99,14 +106,22 @@ Public NotInheritable Class DaneLeku
         oFile = Await oFold.CreateFileAsync(fname)
         ' https://stackoverflow.com/questions/49431603/download-pdf-to-localfolder-in-uwp
         Dim oDownloader As New Windows.Networking.BackgroundTransfer.BackgroundDownloader
-        Dim oDownload = oDownloader.CreateDownload(New Uri(sUrl), oFile)
+        Dim oDownload = oDownloader.CreateDownload(oUri, oFile)
         Await oDownload.StartAsync()
-        Me.MsgBox("Zainicjowałem ściąganie, poczekaj chwilę i spróbuj ponownie")
+        vblib.MsgBox("Zainicjowałem ściąganie, poczekaj chwilę i spróbuj ponownie")
 
         ' http://pub.rejestrymedyczne.csioz.gov.pl/Pobieranie.ashx?type=22265-c
         ' http://pub.rejestrymedyczne.csioz.gov.pl/Pobieranie.ashx?type=22265-u
         ' https://rejestry.ezdrowie.gov.pl/medicinal-products/33004/leaflet
         ' https://rejestry.ezdrowie.gov.pl/medicinal-products/33004/characteristic
+    End Function
+
+
+
+    Private Async Sub PokazPDF(bCharakt As Boolean)
+        Dim errMsg As String = Await PokazPDF(ContextAsPudelko, False)
+        If String.IsNullOrWhiteSpace(errMsg) Then Return
+        Me.MsgBox(errMsg)
     End Sub
 
     Private Sub uiShowUlotka_Click(sender As Object, e As RoutedEventArgs)
@@ -144,5 +159,6 @@ Public NotInheritable Class DaneLeku
         vblib.globalsy.glZnaneSubstancje.Save()
 
     End Function
+
 
 End Class

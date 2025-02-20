@@ -8,15 +8,26 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Loaded="Page_Loaded" Unloaded="Page_Unloaded">
 
-    <local:StretchedGrid Margin="5,5,5,5" Rows="A,*">
+    <Page.Resources>
+        <local:KonwersjaTarczkaKolor x:Key="KonwersjaTarczkaKolor" />
+        <local:KonwersjaTarczkaOnOff x:Key="KonwersjaTarczkaOnOff" />
+        <local:KonwersjaTarczkaZnak x:Key="KonwersjaTarczkaZnak" />
+    </Page.Resources>
+    
+    <local:StretchedGrid Margin="5,5,5,5" Rows="A,A,*" x:Name="uiGrid">
+        <!--<ProgressRing x:Name="uiProcesuje" Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />-->
 
         <TextBlock Text="Moje leki" HorizontalAlignment="Center" FontSize="20" Margin="0,0,0,20"/>
 
-        <local:StretchedListView x:Name="uiList" Grid.Row="1" >
+        <StackPanel Orientation="Horizontal" Grid.Row="1">
+            <TextBlock Text="Filtr: "/>
+            <TextBox Name="uiFilter" Width="100" TextChanged="uiFilter_TextChanged" ToolTipService.ToolTip="Fragment nazwy leku bądź substancji czynnej"/>
+        </StackPanel>
+        
+        <local:StretchedListView x:Name="uiList" Grid.Row="2" >
             <ListView.HeaderTemplate>
                 <DataTemplate>
                 <local:StretchedGridBlue Margin="10,5,10,0" BorderThickness="1" Cols="*,40,30">
-
                     <TextBlock Grid.Column="0" Text="Nazwa" HorizontalAlignment="Center" />
                         <TextBlock Grid.Column="2" Text="Inter" HorizontalAlignment="Center" />
                     </local:StretchedGridBlue>
@@ -25,14 +36,24 @@
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <local:StretchedGridBlue Margin="0,5,0,0" BorderThickness="1" Rows="A,A"  Cols="*,40,30">
+                        <StackPanel Grid.Row="0" Orientation="Horizontal">
+                            <!--<SymbolIcon Symbol="ReportHacked" Visibility="{Binding bWasToasted, Mode=OneWay, Converter={StaticResource KonwersjaTarczkaOnOff} }" Foreground="{Binding bWasToasted, Mode=OneWay, Converter={StaticResource KonwersjaTarczkaKolor} }" />-->
+                            <TextBox Visibility="{Binding bWasToasted, Mode=OneWay, Converter={StaticResource KonwersjaTarczkaOnOff} }" Text="{Binding bWasToasted, Mode=OneWay, Converter={StaticResource KonwersjaTarczkaZnak} }" >
+                                <TextBox.ContextFlyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem Text="Decyzja 🌍" Click="uiPokazDecyzje_Click" />
+                                    </MenuFlyout>
+                                </TextBox.ContextFlyout>
+                            </TextBox>
 
-                        <TextBlock Grid.Row="0" Text="{Binding sNazwa, Mode=OneWay }" FontSize="20" FontWeight="Bold" />
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding sNazwaCzynna, Mode=OneWay }" />
+                            <TextBlock Text="{Binding sNazwa, Mode=OneWay }" FontSize="20" FontWeight="Bold" />
+                        </StackPanel>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding sNazwaCzynna, Mode=OneWay }" ToolTipService.ToolTip="Nazwa substancji czynnej"/>
                         <local:UCtypLeku Grid.Column="1" Grid.RowSpan="2" MinWidth="20" Margin="3,0,4,0" ValueChanged="UCtypLeku_ValueChanged" />
-                        <!-- Value="{Binding iTypLeku, Mode=TwoWay}"-->
+                        <!-- Value="{Binding iTypLeku, Mode=TwoWay}"; teraz zmiana przez DataContext-->
 
                         <!--<CheckBox Grid.Column="1" Grid.RowSpan="2" MinWidth="20" IsChecked="{Binding bStaly, Mode=OneWay }" Margin="3,0,4,0" IsEnabled="False" />-->
-                        <CheckBox Grid.Column="2" Grid.RowSpan="2" MinWidth="20" IsChecked="{Binding bIncludeInteraction, Mode=TwoWay }" Margin="3,0,4,0" />
+                        <CheckBox Grid.Column="2" Grid.RowSpan="2" MinWidth="20" IsChecked="{Binding bIncludeInteraction, Mode=TwoWay }" Margin="3,0,4,0" ToolTipService.ToolTip="czy uwzględniac w interakcjach"/>
 
                         <Grid.ContextFlyout>
                             <MenuFlyout>

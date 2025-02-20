@@ -3,40 +3,73 @@
 ' 2019.06.12 Setting: ignore if Location contains text... (local setting)
 ' 2019.06.17 App:Dawkowanie2NextTime, poprawka limitu iFor (>= na >)
 
-'Imports vblib
-Imports pkar.UI.Extensions
 Imports pkar
+Imports pkar.UI.Extensions
+Imports pkar.Localize
 
 Public NotInheritable Class MainPage
     Inherits Page
 
     Dim mbInLoading As Boolean = True
 
+    Private Sub Roznosci()
+        ' od 14393, czyli od Aski
+        Windows.UI.Notifications.ToastNotificationManager.ConfigureNotificationMirroring(Windows.UI.Notifications.NotificationMirroring.Allowed)
+        ' dla RemoteSystem
+        Dim oCos = Windows.ApplicationModel.Package.Current.Id.FamilyName
+    End Sub
 
     Private Async Sub Page_Loaded(sender As Object, e As RoutedEventArgs)
         Me.InitDialogs
-        Me.ProgRingInit(True, False)
 
-        'Await DodajWezPigulke()    - plik wrzuc, jak go nie ma w Sounds
+        mbInLoading = True  ' zeby nie zapisywal tego co wlasnie odczytal
 
-        ' w App jest wczytanie glZestawy (lub import)
-        Dim berr As Boolean = False
+        Await InitLoadPudelka()
+        Await InitLoadSubst()
+        Await InitLoadZestawy()
+
+        Dim bErr As Boolean
         Try
-            If vblib.globalsy.glZnanePudelka Is Nothing Then
-                vblib.globalsy.glZnanePudelka = New BaseList(Of vblib.JednoPudelko)(Windows.Storage.ApplicationData.Current.RoamingFolder.Path, "pudelka.json")
-                vblib.globalsy.glZnanePudelka.Load()
 
-                If vblib.globalsy.glZnanePudelka.Count < 1 Then
-                    'Await App.ZnanePudelkaImportXML  ' false bedzie pewnie zwykle - dla nie-Polaków
-                End If
+            If vblib.GetSettingsBool("generateToasts") Then
+                ' reinit nexttime - moze był okres bez aplikacji, i samo się nie zmieniało
+                vblib.globalsy.Dawkowanie2NextTime(True)
+                Await App.ZaplanujToasty()
             End If
-
         Catch ex As Exception
-            berr = True
+            bErr = True
         End Try
-        If berr Then Await Me.MsgBoxAsync("ERROR PUDELKA")
+        If bErr Then Await Me.MsgBoxAsync("ERROR TOASTY")
 
 
+        If vblib.globalsy.glZestawy IsNot Nothing Then
+            uiList.ItemsSource = From c In vblib.globalsy.glZestawy Order By c.oNextTime
+        End If
+
+        Try
+            Await App.RegisterTriggers()
+        Catch ex As Exception
+            bErr = True
+        End Try
+        If bErr Then Await Me.MsgBoxAsync("ERROR TRIGGERS")
+
+        Await Task.Delay(500)   ' musi poczekac - inaczej jest wywolywany Event enable/disable
+        mbInLoading = False
+
+    End Sub
+
+    Private Async Function InitLoadZestawy() As Task
+        If vblib.globalsy.glZestawy Is Nothing Then
+            'Await Me.MsgBoxAsync("Nie wczytalem jeszcze zestawów")
+            App.WczytajZestawyLubImportuj(True)
+            If vblib.globalsy.glZestawy Is Nothing Then
+                Await Me.MsgBoxAsync("Dalej nie mam zestawów")
+            End If
+        End If
+    End Function
+
+    Private Async Function InitLoadSubst() As Task(Of Boolean)
+        Dim bErr As Boolean
         Try
 
             If vblib.globalsy.glZnaneSubstancje Is Nothing Then
@@ -49,63 +82,32 @@ Public NotInheritable Class MainPage
 
             End If
         Catch ex As Exception
-            berr = True
+            bErr = True
         End Try
-        If berr Then Await Me.MsgBoxAsync("ERROR SUBSTANCJE")
+        If bErr Then Await Me.MsgBoxAsync("ERROR SUBSTANCJE")
+        Return bErr
+    End Function
 
+    Private Async Function InitLoadPudelka() As Task
+        Dim berr As Boolean = False
         Try
+            If vblib.globalsy.glZnanePudelka Is Nothing Then
+                vblib.globalsy.glZnanePudelka = New BaseList(Of vblib.JednoPudelko)(Windows.Storage.ApplicationData.Current.RoamingFolder.Path, "pudelka.json")
+                vblib.globalsy.glZnanePudelka.Load()
 
-            If vblib.GetSettingsBool("generateToasts") Then
-                ' reinit nexttime - moze był okres bez aplikacji, i samo się nie zmieniało
-                vblib.globalsy.Dawkowanie2NextTime(True)
-                Await App.ZaplanujToasty()
+                If vblib.globalsy.glZnanePudelka.Count < 1 Then
+                    'Await App.ZnanePudelkaImportXML  ' false bedzie pewnie zwykle - dla nie-Polaków
+                End If
             End If
+            Return
         Catch ex As Exception
-            berr = True
         End Try
-        If berr Then Await Me.MsgBoxAsync("ERROR TOASTY")
 
-        mbInLoading = True  ' zeby nie zapisywal tego co wlasnie odczytal
-
-        If vblib.globalsy.glZestawy Is Nothing Then
-            Await Me.MsgBoxAsync("Nie wczytalem jeszcze zestawów")
-            Await App.WczytajZestawyLubImportuj
-            If vblib.globalsy.glZestawy Is Nothing Then
-                Await Me.MsgBoxAsync("Dalej nie mam zestawów")
-            End If
-        End If
-
-        If vblib.globalsy.glZestawy IsNot Nothing Then
-            Await Me.MsgBoxAsync("mam zestawy")
-            uiList.ItemsSource = From c In vblib.globalsy.glZestawy Order By c.oNextTime
-        End If
-
-        Try
-            Await App.RegisterTriggers()
-        Catch ex As Exception
-            berr = True
-        End Try
-        If berr Then Await Me.MsgBoxAsync("ERROR TRIGGERS")
-
-        'Await CrashMessageShow()
-
-        'SetSettingsString("resBeforeList", GetLangString("resBeforeList"))
-        'SetSettingsString("resAfterList", GetLangString("resAfterList"))
-        'SetSettingsString("resIgnoreList", GetLangString("resIgnoreList"))
-        'SetSettingsString("resHomeList", GetLangString("resHomeList"))
-        'SetSettingsString("resBeforeButton", GetLangString("resBeforeButton"))
-        'SetSettingsString("resAfterButton", GetLangString("resAfterButton"))
-        'SetSettingsString("resIgnoreButton", GetLangString("resIgnoreButton"))
-        'SetSettingsString("resHomeButton", GetLangString("resHomeButton"))
-        'SetSettingsString("resToastTitle", GetLangString("resToastTitle"))
-        'SetSettingsString("resPillTaken", GetLangString("resPillTaken"))
-        'SetSettingsString("resPillDelay", GetLangString("resPillDelay"))
-
-        Await Task.Delay(1000)   ' musi poczekac - inaczej jest wywolywany Event enable/disable
-        mbInLoading = False
+        Await Me.MsgBoxAsync("ERROR PUDELKA")
+    End Function
 
 
-    End Sub
+
 
     'Private Function DodajWezPigulke() As Task
     '    If Not IsThisMoje() Then Exit Function
@@ -156,7 +158,7 @@ Public NotInheritable Class MainPage
     Private Sub uiLibrary_Tapped(sender As Object, e As TappedRoutedEventArgs)
         Dim bPL As Boolean = False
         Try
-            If vblib.GetLangString("_lang") = "PL" Then bPL = True
+            bPL = IsCurrentLang("pl")
         Catch
         End Try
 
@@ -192,19 +194,8 @@ Public NotInheritable Class MainPage
         Dim oItem As vblib.JedenZestaw = Sender2Zestaw(sender)
         If oItem Is Nothing Then Return
 
-        'Dim sTxt As String = "Details" & vbCrLf
-        'sTxt = sTxt & "sId=" & oItem.sId & vbCrLf
-        'sTxt = sTxt & "sNazwaZestawu=" & oItem.sNazwaZestawu & vbCrLf
-        'sTxt = sTxt & "sTakeTimes=" & oItem.sTakeTimes & vbCrLf
-        'sTxt = sTxt & "sNextOrgTime=" & oItem.sNextOrgTime & vbCrLf
-        'sTxt = sTxt & "iDelayMins=" & oItem.iDelayMins & vbCrLf
-        'sTxt = sTxt & "bEnabled=" & oItem.bEnabled & vbCrLf
-        ''sTxt = sTxt & "bEnabled=" & oItem.bEnabled & vbCrLf
-        'sTxt = sTxt & "oNextOrgTime=" & oItem.oNextOrgTime.ToString("yyyy.MM.dd HH:mm:ss") & vbCrLf
-        'sTxt = sTxt & "oNextTime=" & oItem.oNextTime.ToString("yyyy.MM.dd HH:mm:ss") & vbCrLf
-        'sTxt = sTxt & "sDisplayTime=" & oItem.sDisplayTime & vbCrLf
-        'sTxt = sTxt & "sDisplayOrgTime=" & oItem.sDisplayOrgTime & vbCrLf
+        Dim sTxt As String = "Details" & vbCrLf & oItem.DumpAsText
 
-        Me.MsgBox("Details" & vbCrLf & oItem.DumpAsText)
+        Me.MsgBox(sTxt)
     End Sub
 End Class

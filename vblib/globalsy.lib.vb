@@ -194,7 +194,7 @@ Public Module globalsy
 
             If bIgnoreArchLeki AndAlso lek.iTypLeku = 0 Then Continue For
 
-            Select Case glWycofaniaGIF.CheckEAN(lek.sBarcode)
+            Select Case glWycofaniaGIF.CheckEAN(lek)
                 Case GIFstatus.Wycofany
                     If lek.bWasToasted <> GIFstatus.Wycofany Then
                         ret &= vbCrLf & "Wycofany lek: " & lek.sNazwa

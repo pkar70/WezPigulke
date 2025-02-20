@@ -61,7 +61,8 @@
                 <TextBox Text="{Binding sPozwolenie}" Grid.Row="4" Grid.Column="1"  IsReadOnly="True" BorderThickness="0" />
                 <TextBox Text="{Binding sWaznosc}" Grid.Row="5" Grid.Column="1" IsReadOnly="True" BorderThickness="0" />
                 <TextBox Text="{Binding sPodmiot}" Grid.Row="6" Grid.Column="1"  IsReadOnly="True" BorderThickness="0" />
-                <HyperlinkButton Content="{Binding sProcedura}" Grid.Row="7" Grid.Column="1" NavigateUri="https://getmedi.pl/news/25/procedury-rejestracyjne-wsrod-lekow-refundowanych"/>
+                <!--<HyperlinkButton Content="{Binding sProcedura}" Grid.Row="7" Grid.Column="1" NavigateUri="https://getmedi.pl/news/25/procedury-rejestracyjne-wsrod-lekow-refundowanych"/>-->
+                <local:UCprocedura Text="{Binding sProcedura}" Grid.Row="7" Grid.Column="1" />
                 <!--<TextBox x:Name="uiProcedura" Grid.Row="7" Grid.Column="1"  IsReadOnly="True" BorderThickness="0" />-->
                 <HyperlinkButton Content="{Binding sKodATC}" Name="uiKodATC" Grid.Row="8" Grid.Column="1" ToolTipService.ToolTip="Przejście do rejestru ATC"/>
                 <!-- <TextBlock x:Name="uiKodATC" Grid.Row="8" Grid.Column="1"  Margin="0,2,0,2"/> -->

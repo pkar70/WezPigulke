@@ -36,11 +36,7 @@
 ' ktomalek - mozna z nazwy szukac zamiennikow, sprawdzac w aptekach w ogóle! - ale bez cen
 
 
-Imports pkar
 Imports pkar.UI.Extensions
-Imports vblib
-Imports ZXing
-
 
 Public NotInheritable Class SzukajInfoLeku
     Inherits Page
@@ -53,55 +49,14 @@ Public NotInheritable Class SzukajInfoLeku
     Private Sub Page_Loaded(sender As Object, e As RoutedEventArgs)
         Me.InitDialogs
         Me.ProgRingInit(True, False)
+
         uiEAN.Text = App.gsEAN
         WypelnijMenuEAN(uiLastEAN)
     End Sub
 
-    ' wypełnienie EAN przez zeskanowanie
-    Private Async Sub uiScanBarCode_Click(sender As Object, e As RoutedEventArgs)
-        ' tu bedzie najciekawsze :)
-        ' Camera-based
-        'https://github.com/Microsoft/Windows-universal-samples/tree/master/Samples/BarcodeScanner
-        ' nieprawda, jest tylko gdy skaner ma mozliwosc preview
-        'Dim oWatch = Windows.Devices.Enumeration.DeviceInformation.CreateWatcher(Windows.Devices.PointOfService.BarcodeScanner.GetDeviceSelector())
-        'Dim oList = Await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(Windows.Devices.PointOfService.BarcodeScanner.GetDeviceSelector())
-        '        Dim oScanColl As Collection(Of Windows.Devices.PointOfService.BarcodeScanner.BarcodeScannerInfo)
-
-
-        Dim oScanner As ZXing.Mobile.MobileBarcodeScanner
-        oScanner = New ZXing.Mobile.MobileBarcodeScanner(Me.Dispatcher)
-        'Tell our scanner to use the default overlay 
-        oScanner.UseCustomOverlay = False
-        ' //We can customize the top And bottom text of our default overlay 
-        oScanner.TopText = "Hold camera up to barcode"
-        oScanner.BottomText = "Camera will automatically scan barcode" & vbCrLf & "Press the 'Back' button to Cancel"
-        Dim oRes = Await oScanner.Scan()
-
-        If oRes Is Nothing Then Return
-
-        If oRes.BarcodeFormat <> ZXing.BarcodeFormat.EAN_13 Then
-            MsgBox("To nie wygląda na kod EAN13")
-            Return
-        End If
-
-        uiEAN.Text = oRes.Text
-        App.gsEAN = uiEAN.Text
-
-        ' pamiętamy ostatnie EAN tylko ograniczoną liczbę (od najnowszego)
-        ' 2025.01.31: uzywane w menu (przy wyszukiwarce)
-        Dim sHistoryEAN As String = vblib.GetSettingsString("lastEANs")
-        sHistoryEAN = uiEAN.Text & "|" & sHistoryEAN
-        If sHistoryEAN.Length > 14 * vblib.GetSettingsInt("maxScannedEANs", 10) Then
-            sHistoryEAN = sHistoryEAN.Substring(0, 14 * vblib.GetSettingsInt("maxScannedEANs", 10))
-        End If
-        vblib.SetSettingsString("lastEANs", sHistoryEAN, True)
-
-    End Sub
-
-
 
     Private Async Sub uiSearch_Click(sender As Object, e As RoutedEventArgs)
-        ' pierwszy krok, po wypełnieniu EAN lub nazwy - znalezienie leków
+
         Dim bCos As Boolean = False
         If uiSubst.Text <> "" Then bCos = True
         If uiATC.Text <> "" Then bCos = True
@@ -126,15 +81,14 @@ Public NotInheritable Class SzukajInfoLeku
         Dim lPudelka As List(Of vblib.JednoPudelko) = Await vblib.SzukajInfoLeku.GetListaPudelek(uiEAN.Text, uiNazwa.Text, uiSubst.Text, uiATC.Text)
 
         FullFormShow(False)
-
         If uiGrid.ActualWidth > 600 Then
             uiListSzeroki.Visibility = Visibility.Visible
             uiListWaski.Visibility = Visibility.Collapsed
-            uiListSzeroki.ItemsSource = lPudelka
+            uiListSzeroki.ItemsSource = From c In lPudelka
         Else
             uiListSzeroki.Visibility = Visibility.Collapsed
             uiListWaski.Visibility = Visibility.Visible
-            uiListWaski.ItemsSource = lPudelka
+            uiListWaski.ItemsSource = From c In lPudelka
         End If ' wedle uiGrid
 
         Me.ProgRingShow(False)
@@ -162,6 +116,46 @@ Public NotInheritable Class SzukajInfoLeku
         FullFormShow(uiFullForm.IsChecked)
     End Sub
 
+    Private Async Sub uiScanBarCode_Click(sender As Object, e As RoutedEventArgs)
+        ' tu bedzie najciekawsze :)
+        ' Camera-based
+        'https://github.com/Microsoft/Windows-universal-samples/tree/master/Samples/BarcodeScanner
+        ' nieprawda, jest tylko gdy skaner ma mozliwosc preview
+        'Dim oWatch = Windows.Devices.Enumeration.DeviceInformation.CreateWatcher(Windows.Devices.PointOfService.BarcodeScanner.GetDeviceSelector())
+        'Dim oList = Await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(Windows.Devices.PointOfService.BarcodeScanner.GetDeviceSelector())
+        '        Dim oScanColl As Collection(Of Windows.Devices.PointOfService.BarcodeScanner.BarcodeScannerInfo)
+
+        'Github biblioteka
+        'https://github.com/nblockchain/ZXing.Net.Xamarin
+
+        Dim oScanner As ZXing.Mobile.MobileBarcodeScanner
+        oScanner = New ZXing.Mobile.MobileBarcodeScanner(Me.Dispatcher)
+        'Tell our scanner to use the default overlay 
+        oScanner.UseCustomOverlay = False
+        ' //We can customize the top And bottom text of our default overlay 
+        oScanner.TopText = "Hold camera up to barcode"
+        oScanner.BottomText = "Camera will automatically scan barcode" & vbCrLf & "Press the 'Back' button to Cancel"
+        Dim oRes = Await oScanner.Scan()
+
+        If oRes Is Nothing Then Return
+
+        If oRes.BarcodeFormat <> ZXing.BarcodeFormat.EAN_13 Then
+            Me.MsgBox("To nie wygląda na kod EAN13")
+            Return
+        End If
+
+        uiEAN.Text = oRes.Text
+        App.gsEAN = uiEAN.Text
+        Dim sHistoryEAN As String = vblib.GetSettingsString("lastEANs")
+        sHistoryEAN = uiEAN.Text & "|" & sHistoryEAN
+        If sHistoryEAN.Length > 14 * vblib.GetSettingsInt("maxScannedEANs", 10) Then
+            sHistoryEAN = sHistoryEAN.Substring(0, 14 * vblib.GetSettingsInt("maxScannedEANs", 10))
+        End If
+        vblib.SetSettingsString("lastEANs", sHistoryEAN, True)
+        'uiNazwa.Text = "to jest tex"
+        ' włączanie żarówki?
+
+    End Sub
 
     ' niestety, teraz nie ma strony per lek
     'Private Sub uiGoWeb_Click(sender As Object, e As RoutedEventArgs)
@@ -175,11 +169,8 @@ Public NotInheritable Class SzukajInfoLeku
     'End Sub
 
     Private Sub uiShowProcedures_Click(sender As Object, e As RoutedEventArgs)
-        ' za: https://getmedi.pl/news/25/procedury-rejestracyjne-wsrod-lekow-refundowanych
-        Dim sUri As String = "https://getmedi.pl/news/25/procedury-rejestracyjne-wsrod-lekow-refundowanych"
-        OpenBrowser(sUri)
+        UCprocedura.ShowProceduryWeb()
     End Sub
-
 
     Public Sub WypelnijMenuEAN(oMenu As MenuFlyout)
         Dim sEANy As String = vblib.GetSettingsString("lastEANs")
@@ -212,13 +203,6 @@ Public NotInheritable Class SzukajInfoLeku
         uiLabelEAN.ContextFlyout.ShowAt(uiLabelEAN)
     End Sub
 
-
-    ' ulotka:  https://rejestry.ezdrowie.gov.pl/medicinal-products/30735/leaflet
-    ' charakterystyka: https://rejestry.ezdrowie.gov.pl/medicinal-products/30735/characteristic
-    ' streszczenie RMP: https://rejestry.ezdrowie.gov.pl/medicinal-products/30735/rmp-summary (dokumentacja dot. dopuszczenia)
-
-
-
     Private Async Sub uiDodajTenLek_Click(sender As Object, e As RoutedEventArgs)
         Dim oMFI As MenuFlyoutItem = TryCast(sender, MenuFlyoutItem)
         If oMFI Is Nothing Then Return
@@ -226,9 +210,9 @@ Public NotInheritable Class SzukajInfoLeku
         Dim oItem As vblib.JednoPudelko = TryCast(oMFI.DataContext, vblib.JednoPudelko)
         If oItem Is Nothing Then Return
 
-        For Each oTmp As vblib.JednoPudelko In globalsy.glZnanePudelka
+        For Each oTmp As vblib.JednoPudelko In vblib.globalsy.glZnanePudelka
             If oTmp.sBarcode = oItem.sBarcode Then
-                Await Me.DialogBoxYNAsync("Już to znamy!")
+                Me.MsgBox("Już to znamy!")
                 Return
             End If
         Next
@@ -239,8 +223,8 @@ Public NotInheritable Class SzukajInfoLeku
 
         oItem.sCreated = Date.Now.ToString("yyyyMMdd HH:mm")
         ' zapisz dane
-        globalsy.glZnanePudelka.Add(oItem) ' z ewentualną podmianą!
-        globalsy.glZnanePudelka.Save()
+        vblib.globalsy.glZnanePudelka.Add(oItem) ' z ewentualną podmianą!
+        vblib.globalsy.glZnanePudelka.Save()
 
         Me.ProgRingShow(False)
     End Sub
