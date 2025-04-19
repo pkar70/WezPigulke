@@ -1,0 +1,70 @@
+﻿<Page
+    x:Class="WezPigulke.Wycofania"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:WezPigulke"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Loaded="Page_Loaded">
+
+    <Page.Resources>
+        <local:KonwerterSerii x:Key="KonwerterSerii" />
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock FontSize="16" Text="Decyzje GIF" HorizontalAlignment="Center" />
+
+        <ListView Grid.Row="1" Margin="5,5,5,5" Name="uiLista" HorizontalContentAlignment="Stretch">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment"  Value="Stretch"/>
+                </Style>
+            </ListView.ItemContainerStyle>
+
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="0,5,0,0" BorderThickness="1" BorderBrush="Blue">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="6*"/>
+                                <ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="2*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding nazwa, Mode=OneWay }" FontSize="14" FontWeight="Bold" Grid.Column="0"/>
+                            <TextBlock Text="{Binding postac, Mode=OneWay }" ToolTipService.ToolTip="{Binding postac, Mode=OneWay }" Grid.Column="1"/>
+                            <TextBlock Text="{Binding moc, Mode=OneWay }" ToolTipService.ToolTip="{Binding moc, Mode=OneWay }" Grid.Column="2" HorizontalAlignment="Right"/>
+                        </Grid>
+
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="110"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding decyzja, Mode=OneWay }" Grid.Column="0"/>
+                            <TextBlock Text="{Binding data, Mode=OneWay }" Grid.Column="1" Margin="5,0,5,0"/>
+                            <TextBlock Text="{Binding gtin, Mode=OneWay }" Grid.Column="2"/>
+                        </Grid>
+
+                        <TextBlock Text="{Binding serie, Mode=OneWay, Converter={StaticResource KonwerterSerii}}" ToolTipService.ToolTip="{Binding serie, Mode=OneWay, Converter={StaticResource KonwerterSerii}}" Grid.Row="2"/>
+
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <Button Grid.Row="2" Content="OK" HorizontalAlignment="Center" Click="uiOK_Click" />
+    </Grid>
+</Page>

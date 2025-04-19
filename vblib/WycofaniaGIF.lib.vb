@@ -20,6 +20,18 @@ Public Class WycofaniaGIF
         _wycofania.Load()
     End Sub
 
+    Public Function Count() As Integer
+        Return _wycofania.Count
+    End Function
+
+    Public Function GetAll() As List(Of ImportowanaDecyzja)
+        Return _wycofania.ToList
+    End Function
+    ''' <summary>
+    ''' Wczytuje pełną bazę decyzji GIF z sieci. Nie używane, bo nie ma sensu.
+    ''' </summary>
+    ''' <remarks>Nie działa, bo GIF zmienił stronę</remarks>
+
     'Public Sub ImportFull()
     '    ' https://rdg.ezdrowie.gov.pl/Decision/DownloadPublicXml - ale jest redirect na tym do konkretnego dnia, RejestrDecyzjiGIF20250205.xml
     'End Sub
@@ -40,27 +52,45 @@ Public Class WycofaniaGIF
         ' 2024: od 4451, 116 decyzji
         ' 2023: od 4326, 125 decyzji
 
+        'vblib.CrashMessageAdd($"wycofania start downloading: {decNum}")
+
         Dim bAdded As Boolean
 
         Dim retMsg As String = ""
 
+        '2025.03.12 znalazłem, ale było wcześniej już - nieciągła numeracja decyzji, tej akurat nie ma, następne są
+        ' https://rdg.ezdrowie.gov.pl/Decision/Decision?id=4545
+        Dim iGuardEmpty As Integer = 3
+
         Do
+            'vblib.CrashMessageAdd($"wycofania downloading dec: {decNum}")
             Dim decyzja As ImportowanaDecyzja = Await DownloadDecyzja(decNum)
 
             If decyzja Is Nothing Then
-                Debug.WriteLine($"Decyzji {decNum} już nie ma, zapisuję plik")
-                If bAdded Then _wycofania.Save()
-                Return retMsg
-            End If
 
-            Debug.WriteLine($"Decyzja {decNum}: {decyzja.decyzja} dla {decyzja.nazwa}, guard={maxCount}")
+                iGuardEmpty -= 1
 
-            If decyzja.data IsNot Nothing Then
-                _wycofania.Add(decyzja)
-                bAdded = True
+                If iGuardEmpty < 0 Then
+                    Debug.WriteLine($"Decyzji {decNum} już nie ma, zapisuję plik")
+                    'vblib.CrashMessageAdd($"Decyzji {decNum} już nie ma, zapisuję plik")
+                    If bAdded Then _wycofania.Save()
+                    Return retMsg
+                End If
 
-                retMsg &= $"{decyzja.decyzja} dla '{decyzja.nazwa}'" & vbCrLf
+                Debug.WriteLine($"Decyzji {decNum} nie ma, ale idę dalej")
+                'vblib.CrashMessageAdd($"Decyzji {decNum} nie ma, ale idę dalej")
 
+            Else
+                Debug.WriteLine($"Decyzja {decNum}: {decyzja.decyzja} dla {decyzja.nazwa}, guard={maxCount}")
+                'vblib.CrashMessageAdd($"Decyzja {decNum}: {decyzja.decyzja} dla {decyzja.nazwa}, guard={maxCount}")
+
+                If decyzja.data IsNot Nothing Then
+                    _wycofania.Add(decyzja)
+                    bAdded = True
+
+                    retMsg &= $"{decyzja.decyzja} dla '{decyzja.nazwa}'" & vbCrLf
+
+                End If
             End If
 
             decNum += 1
@@ -68,6 +98,7 @@ Public Class WycofaniaGIF
             maxCount -= 1
             If maxCount < 0 Then
                 Debug.WriteLine($"Guard zareagował, zapisuję plik")
+                'vblib.CrashMessageAdd($"Guard zareagował, zapisuję plik")
                 If bAdded Then _wycofania.Save()
                 Return retMsg
             End If
@@ -161,6 +192,7 @@ Public Class WycofaniaGIF
     ''' <param name="id">Nr decyzji do ściągnięcia</param>
     ''' <returns>NULL gdy błąd; lub ImportowanaDecyzja z wstawionym id, gdy reszta pól NULL, to decyzja pusta</returns>
     Private Async Function DownloadDecyzja(id As Integer) As Task(Of ImportowanaDecyzja)
+        vblib.DumpCurrMethod("id=" & id)
         Dim sUri As String = "https://rdg.ezdrowie.gov.pl/Decision/Decision?id=" & id
 
         Try
@@ -168,6 +200,7 @@ Public Class WycofaniaGIF
 
             Return ParseDecyzja(id, sPage)
         Catch ex As Exception
+            vblib.DumpMessage("DownloadDecyzja crash, message: " & vbCrLf & ex.Message)
             Return Nothing
         End Try
 
@@ -182,13 +215,23 @@ Public Class WycofaniaGIF
     ''' <returns>NULL gdy błąd; lub ImportowanaDecyzja z wstawionym id, gdy reszta pól NULL, to decyzja pusta</returns>
     Private Function ParseDecyzja(id As Integer, html As String) As ImportowanaDecyzja
         ' ale błąd powinno się wychwycić wcześniej, bo httpcode=500
-        If html.Contains("Odwołanie do obiektu nie zostało ustawione na wystąpienie obiektu") Then Return Nothing
+
+        'vblib.CrashMessageAdd($"ParseDecyzja({id}")
+
+
+        If html.Contains("Odwołanie do obiektu nie zostało ustawione na wystąpienie obiektu") Then
+            'vblib.CrashMessageAdd($"jakoby empty, exiting")
+            Return Nothing
+        End If
 
         Dim oNew As New ImportowanaDecyzja
         oNew.nr = id
 
         ' tego typu decyzji nie pamiętamy - one i tak nie mają EAN
-        If html.ContainsCI("Decyzja o zakazie wprowadzenia") Then Return oNew
+        If html.ContainsCI("Decyzja o zakazie wprowadzenia") Then
+            'vblib.CrashMessageAdd($"zakaz wprowadzenia, ignoring")
+            Return oNew
+        End If
 
         oNew.data = ExtractRowData(html, "Data decyzji")
         oNew.decyzja = html.SubstringBetweenExclusive("<title>", "</title>").Replace("RDG", "").Replace("-", "").Trim
@@ -200,6 +243,9 @@ Public Class WycofaniaGIF
         oNew.wielkosc = ExtractRowData(html, "Wielkość opakowania")
 
         oNew.serie = ExtractSerie(html)
+
+        'vblib.CrashMessageAdd($"extracted data")
+
 
         Return oNew
 
@@ -254,7 +300,7 @@ Public Class WycofaniaGIF
     ' https://rdg.ezdrowie.gov.pl/Decision/Decision?id=4577
 
 
-    Protected Class ImportowanaDecyzja
+    Public Class ImportowanaDecyzja
         Inherits BaseStruct
 
         Public Property nr As Integer

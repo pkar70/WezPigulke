@@ -276,10 +276,12 @@ Public NotInheritable Class MojeLeki
         Dim oItem As vblib.JednoPudelko = Sender2Pudelko(sender)
         If oItem Is Nothing Then Return
 
-        If vblib.globalsy.glWycofaniaGIF Is Nothing Then
-            vblib.globalsy.glWycofaniaGIF = New vblib.WycofaniaGIF(Windows.Storage.ApplicationData.Current.RoamingFolder.Path)
-            vblib.globalsy.glWycofaniaGIF.LoadCache()
-        End If
+        App.InitLoadDecyzje()
+
+        'If vblib.globalsy.glWycofaniaGIF Is Nothing Then
+        '    vblib.globalsy.glWycofaniaGIF = New vblib.WycofaniaGIF(Windows.Storage.ApplicationData.Current.RoamingFolder.Path)
+        '    vblib.globalsy.glWycofaniaGIF.LoadCache()
+        'End If
         ' nie aktualizujemy, bo przecież mamy zapisane że jest decyzja - czyli już ją znamy
 
         Dim linek As Uri = vblib.globalsy.glWycofaniaGIF.GetDecyzjaUri(oItem)
@@ -464,10 +466,13 @@ Public NotInheritable Class MojeLeki
 
 
     Private Async Sub uiCheckWycofania_Click(sender As Object, e As RoutedEventArgs)
-        If vblib.globalsy.glWycofaniaGIF Is Nothing Then
-            vblib.globalsy.glWycofaniaGIF = New vblib.WycofaniaGIF(Windows.Storage.ApplicationData.Current.RoamingFolder.Path)
-            vblib.globalsy.glWycofaniaGIF.LoadCache()
-        End If
+
+        App.InitLoadDecyzje()
+
+        'If vblib.globalsy.glWycofaniaGIF Is Nothing Then
+        '    vblib.globalsy.glWycofaniaGIF = New vblib.WycofaniaGIF(Windows.Storage.ApplicationData.Current.RoamingFolder.Path)
+        '    vblib.globalsy.glWycofaniaGIF.LoadCache()
+        'End If
 
         If pkar.NetIsIPavailable(False) Then
             Me.ProgRingShow(True)

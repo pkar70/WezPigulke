@@ -1,7 +1,5 @@
-﻿Partial Public Module pkar
+﻿Imports Windows.Networking
 
-    Public Sub CrashMessageAdd(s1 As String, s2 As String)
-
-    End Sub
+Partial Public Module pkar
 
 End Module

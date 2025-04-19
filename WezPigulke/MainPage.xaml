@@ -64,6 +64,7 @@
                 <MenuFlyout>
                         <MenuFlyoutItem Text="Szukaj leku" Click="uiLekInfo_Click"/>
                         <MenuFlyoutItem Text="Moje leki" Click="uiMojeLeki_Click"/>
+                        <MenuFlyoutItem Text="Wycofania" Click="uiWycofania_Click"/>
                         <!--<MenuFlyoutItem Text="W aptekach" Click="uiSearchApteki_Click"/>-->
                 </MenuFlyout>
             </AppBarButton.Flyout>

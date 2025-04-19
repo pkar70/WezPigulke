@@ -4,8 +4,9 @@ Imports pkar.UI.Configs
 Public NotInheritable Class Settings
     Inherits Page
 
-    Private Sub Page_Loaded(sender As Object, e As RoutedEventArgs)
+    Private Async Sub Page_Loaded(sender As Object, e As RoutedEventArgs)
         Me.InitDialogs
+        Me.ProgRingInit(True, False)
 
         uiVersion.ShowAppVers(False)
 
@@ -41,10 +42,10 @@ Public NotInheritable Class Settings
         uiGenerateToasts.SetSettingsBool("generateToasts")
 
         If uiGenerateToasts.IsOn AndAlso Not bOldToasts Then
-            If Await Me.DialogBoxYNAsync("msgShouldCreateToast") Then uiScheduleToast_Click(Nothing, Nothing)
+            If Await Me.DialogBoxYNAsync("res:msgShouldCreateToast") Then uiScheduleToast_Click(Nothing, Nothing)
         End If
         If Not uiGenerateToasts.IsOn AndAlso bOldToasts Then
-            If Await Me.DialogBoxYNAsync("msgShouldRemoveToast") Then App.UsunToasty() ' Toasts.RemoveScheduledToasts()  'App.UsunToasty()
+            If Await Me.DialogBoxYNAsync("res:msgShouldRemoveToast") Then App.UsunToasty() ' Toasts.RemoveScheduledToasts()  'App.UsunToasty()
         End If
 
         uiEANitems.SetSettingsInt("maxScannedEANs")
@@ -59,14 +60,41 @@ Public NotInheritable Class Settings
 
         bOldToasts = vblib.GetSettingsBool("uiCheckWycofania")
         uiCheckWycofania.SetSettingsBool
-
-        If uiCheckWycofania.IsOn AndAlso Not bOldToasts Then
-            Await App.TriggerWycofaniaReschedule
-        End If
-        If Not uiGenerateToasts.IsOn Then
-            App.UnregisterTriggers() '("WezPigulkeWycofaniaTrigger")
-        End If
         uiToastForAll.SetSettingsBool
+
+        If uiCheckWycofania.IsOn Then
+
+            If vblib.globalsy.glWycofaniaGIF Is Nothing Then
+                App.InitLoadDecyzje()
+                If vblib.globalsy.glWycofaniaGIF.Count < 10 Then
+                    If Await Me.DialogBoxYNAsync("Wczytać dotychczasowe decyzje?") Then
+                        Me.ProgRingShow(True)
+                        Dim guard As Integer = 20
+                        While guard > 0
+                            Dim countPre As Integer = vblib.globalsy.glWycofaniaGIF.Count
+                            Await vblib.globalsy.glWycofaniaGIF.ImportNewDecyzje(100)
+                            If countPre + 2 < vblib.globalsy.glWycofaniaGIF.Count Then Exit While
+                            guard -= 1
+                        End While
+                        Me.ProgRingShow(False)
+                    End If
+                End If
+            End If
+
+        End If
+
+
+
+        ' rescheduling będzie w MainPage.Page_Loaded
+        'If uiCheckWycofania.IsOn <> bOldToasts Then
+        '    Await App.TriggerWycofaniaReschedule()
+        'End If
+
+        'Await App.TriggerNocnyReschedule()
+
+        'If Not uiGenerateToasts.IsOn Then
+        '    App.UnregisterTriggers("WezPigulkeRescheduleToast") '("WezPigulkeWycofaniaTrigger")
+        'End If
 
         Me.Frame.GoBack()
     End Sub
@@ -79,13 +107,13 @@ Public NotInheritable Class Settings
 
         App.UsunToasty()
         If Not vblib.GetSettingsBool("generateToasts") Then
-            If Not Await Me.DialogBoxYNAsync("msgPomimoWylaczenia") Then
+            If Not Await Me.DialogBoxYNAsync("res:msgPomimoWylaczenia") Then
                 uiScheduleToast.IsEnabled = True
                 Return
             End If
         End If
         Await App.ZaplanujToasty()
-        Me.MsgBox("msgRescheduleDone")
+        Me.MsgBox("res:msgRescheduleDone")
         uiScheduleToast.IsEnabled = True
     End Sub
 
@@ -116,56 +144,5 @@ Public NotInheritable Class Settings
         Me.MsgBox(sTxt)
     End Sub
 
-    Private Async Sub uiSendEmail_Click(sender As Object, e As RoutedEventArgs)
-        Dim oMsg As New Windows.ApplicationModel.Email.EmailMessage()
-        oMsg.Subject = "dane z pigularza"
-
-        oMsg.Attachments.Add(New Email.EmailAttachment())
-
-        Dim sTxt As String = "Załączam dane z pigularza" & vbCrLf
-        'sTxt &= Await ReadRoamFile("zestawy.xml") & vbCrLf
-        'sTxt &= Await ReadRoamFile("pudelka.xml") & vbCrLf
-        'sTxt &= Await ReadRoamFile("substancje.xml") & vbCrLf
-        oMsg.Body = sTxt
-
-        Await AddAttachment(oMsg, "zestawy.xml")
-        Await AddAttachment(oMsg, "pudelka.xml")
-        Await AddAttachment(oMsg, "substancje.xml")
-
-        Await Email.EmailManager.ShowComposeNewEmailAsync(oMsg)
-
-    End Sub
-
-    Private Async Function ReadRoamFile(fname As String) As Task(Of String)
-
-        Dim ret As String = vbCrLf & $"plik {fname}: "
-
-        Dim oFile As Windows.Storage.StorageFile = Await App.GetRoamingFile(fname, False)
-
-        If oFile Is Nothing Then Return ret & "nie istnieje"
-
-
-        ret &= vbCrLf
-
-        Dim oStream As Stream = Await oFile.OpenStreamForReadAsync
-        Dim rdr As New StreamReader(oStream)
-
-        ret &= rdr.ReadToEnd
-
-        'rdr.Close()
-        rdr.Dispose()
-        oStream.Dispose()
-
-        Return ret
-    End Function
-
-    Private Async Function AddAttachment(oMsg As Windows.ApplicationModel.Email.EmailMessage, fname As String) As Task
-        Dim oFile As Windows.Storage.StorageFile = Await App.GetRoamingFile(fname, False)
-
-        If oFile Is Nothing Then Return
-
-        oMsg.Attachments.Add(New Email.EmailAttachment(fname, oFile))
-
-    End Function
 
 End Class

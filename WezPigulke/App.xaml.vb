@@ -74,10 +74,11 @@ Partial NotInheritable Class App
         deferral.Complete()
     End Sub
 
+#If False Then
     Public Shared Async Function GetRoamingFile(sName As String, bCreate As Boolean) As Task(Of Windows.Storage.StorageFile)
         Dim oFold As Windows.Storage.StorageFolder = Windows.Storage.ApplicationData.Current.RoamingFolder
         If oFold Is Nothing Then
-            Await vblib.DialogBoxResAsync("errNoRoamFolder")
+            Await vblib.DialogBoxResAsync("res:errNoRoamFolder")
             Return Nothing
         End If
 
@@ -98,6 +99,7 @@ Partial NotInheritable Class App
 
         Return oFile
     End Function
+#End If
 
     Public Shared Sub WczytajZestawyLubImportuj(bUpdateTimers As Boolean)
 
@@ -111,28 +113,48 @@ Partial NotInheritable Class App
         Return "OK"
     End Function
 
-    Public Shared Async Function ImportNewDecyzje() As Task
+    Public Shared Sub InitLoadDecyzje()
+        If vblib.globalsy.glWycofaniaGIF Is Nothing Then
+            vblib.globalsy.glWycofaniaGIF = New vblib.WycofaniaGIF(Windows.Storage.ApplicationData.Current.LocalFolder.Path)
+        End If
 
-        If vblib.globalsy.glWycofaniaGIF Is Nothing Then Return
+        vblib.globalsy.glWycofaniaGIF.LoadCache()
+
+    End Sub
+
+    Public Shared Async Function ImportNewDecyzje(Optional howMuch As Integer = 100) As Task
+
+        'vblib.CrashMessageAdd("Nowe decyzje GIF - start ImportNewDecyzje")
+
+        If vblib.globalsy.glWycofaniaGIF Is Nothing Then
+            'vblib.CrashMessageAdd("loading decyzje cache")
+            InitLoadDecyzje()
+        End If
         Dim msg As String = Await vblib.globalsy.glWycofaniaGIF.ImportNewDecyzje(100)
+
         If msg.Length < 5 Then Return
 
         If Not vblib.GetSettingsBool("uiToastForAll") Then Return
 
         ' *TODO* toast z tego
-        Dim sXml = $"<visual><binding template='ToastGeneric'>
-<text>Nowe decyzje GIF:</text>
-<text>{msg}</text></binding></visual>"
-        Dim oXml = New Windows.Data.Xml.Dom.XmlDocument
-        oXml.LoadXml("<toast>" & sXml & "</toast>")
-        Dim oToast = New ToastNotification(oXml)
-        ToastNotificationManager.CreateToastNotifier().Show(oToast)
+        MakeDebugToast("Nowe decyzje GIF:", msg)
     End Function
 
+
+    Private Shared Sub MakeDebugToast(msg As String, msg1 As String)
+        Dim sXml As String = $"<visual><binding template='ToastGeneric'>
+<text>{msg}</text><text>{msg1}</text></binding></visual>"
+        Dim oXml As New Windows.Data.Xml.Dom.XmlDocument
+        oXml.LoadXml("<toast>" & sXml & "</toast>")
+        Dim oToast As New ToastNotification(oXml)
+        ToastNotificationManager.CreateToastNotifier().Show(oToast)
+    End Sub
 
 #Region "triggers"
 
     Public Shared Sub UnregisterTriggers(Optional sPrefix As String = "WezPigulke")
+        vblib.DumpCurrMethod("prefix=" & sPrefix)
+
         For Each oTask As KeyValuePair(Of Guid, Background.IBackgroundTaskRegistration) In Background.BackgroundTaskRegistration.AllTasks
             If oTask.Value.Name.StartsWith(sPrefix) Then oTask.Value.Unregister(True)
         Next
@@ -140,11 +162,14 @@ Partial NotInheritable Class App
 
 
     Public Shared Async Function TriggerNocnyReschedule() As Task
-        For Each oTask As KeyValuePair(Of Guid, Background.IBackgroundTaskRegistration) In Background.BackgroundTaskRegistration.AllTasks
-            If oTask.Value.Name = "WezPigulkeRescheduleToast" Then oTask.Value.Unregister(True)
-        Next
+        vblib.DumpCurrMethod()
+
+        UnregisterTriggers("WezPigulkeRescheduleToast")
 
         If Not vblib.GetSettingsBool("dailyReschedule") Then Return
+        If Not vblib.GetSettingsBool("generateToasts") Then Return
+
+        'vblib.DumpMessage("no to mam zarejestrować trigger")
 
         Dim oBAS As Background.BackgroundAccessStatus
         oBAS = Await Background.BackgroundExecutionManager.RequestAccessAsync()
@@ -154,21 +179,32 @@ Partial NotInheritable Class App
 
         If oBAS = Background.BackgroundAccessStatus.AlwaysAllowed Or oBAS = Background.BackgroundAccessStatus.AllowedSubjectToSystemPolicy Then
             Dim oTS As TimeSpan
-            If Not TimeSpan.TryParse(vblib.GetSettingsString("rescheduleTime", "03:00"), oTS) Then
-                oTS = New TimeSpan(3, 0, 0)
-            End If
+            Try
+                If Not TimeSpan.TryParse(vblib.GetSettingsString("rescheduleTime", "03:00"), oTS) Then
+                    oTS = New TimeSpan(3, 0, 0)
+                End If
+            Catch ex As Exception
+                vblib.CrashMessageAdd("TriggerNocnyReschedule, reschedule", ex)
+            End Try
 
             Dim oDate As Date = New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, oTS.Hours, oTS.Minutes, 0)
-            If oDate < Date.Now Then oDate = oDate.AddDays(1)
-            builder.SetTrigger(New Background.TimeTrigger((oDate - Date.Now).TotalMinutes, True))
-            builder.Name = "WezPigulkeRescheduleToast"
-            oRet = builder.Register()
+            If oDate < Date.Now.AddMinutes(30) Then oDate = oDate.AddDays(1)
+            Try
+                builder.SetTrigger(New Background.TimeTrigger((oDate - Date.Now).TotalMinutes, True))
+                builder.Name = "WezPigulkeRescheduleToast"
+                oRet = builder.Register()
+
+                vblib.DumpMessage("trigger TriggerNocny zarejestrowany")
+
+            Catch ex As Exception
+                vblib.CrashMessageAdd("TriggerNocnyReschedule, register", ex)
+            End Try
         End If
 
     End Function
 
     Public Shared Async Function RegisterTriggers() As Task(Of Boolean)
-        UnregisterTriggers()
+        vblib.DumpCurrMethod()
 
         Dim oBAS As Background.BackgroundAccessStatus
         oBAS = Await Background.BackgroundExecutionManager.RequestAccessAsync()
@@ -186,6 +222,7 @@ Partial NotInheritable Class App
             builder.Name = "WezPigulkeCalUpdate"
 
             Await TriggerNocnyReschedule()
+            Await TriggerWycofaniaReschedule()
             Return True
         Else
             Return False
@@ -197,21 +234,34 @@ Partial NotInheritable Class App
     ''' Ten trigger aktualizuje wycofania i informuje jak coś wyleci
     ''' </summary>
     Public Shared Async Function TriggerWycofaniaReschedule() As Task
+        vblib.DumpCurrMethod()
+
+
+        'vblib.CrashMessageAdd("wycoftriggerresched")
 
         UnregisterTriggers("WezPigulkeWycofaniaTrigger")
 
+        'MakeDebugToast("wycoftriggerresched po unregister", "")
+
         If Not vblib.GetSettingsBool("uiCheckWycofania") Then Return
 
-        If Await CanRegisterTriggersAsync() Then
-
-            Dim oDate As Date = New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, 17, 0, 0)
-            If oDate < Date.Now Then oDate = oDate.AddDays(1)
-            RegisterTimerTrigger("WezPigulkeWycofaniaTrigger", (oDate - Date.Now).TotalMinutes, True)
+        If Not Await CanRegisterTriggersAsync() Then
+            vblib.CrashMessageAdd("wycoftriggerresched nie mogę canregister")
+            Return
         End If
+
+        Dim oDate As Date = New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, 17, 0, 0)
+        If Date.Now.Hour > 15 Then oDate = oDate.AddDays(1)
+
+        'vblib.CrashMessageAdd("wycoftriggerresched havedate1", oDate.ToExifString)
+
+        RegisterTimerTrigger("WezPigulkeWycofaniaTrigger", (oDate - Date.Now).TotalMinutes, False)
 
     End Function
 
     Public Shared Async Function CanRegisterTriggersAsync() As Task(Of Boolean)
+        vblib.DumpCurrMethod()
+
         Dim oBAS As Background.BackgroundAccessStatus
         oBAS = Await Background.BackgroundExecutionManager.RequestAccessAsync()
 
@@ -222,7 +272,8 @@ Partial NotInheritable Class App
 
     End Function
 
-    Public Shared Function RegisterTimerTrigger(name As String, freshnessMinutes As Integer, oneShot As Boolean, Optional condition As Background.SystemCondition = Nothing) As Background.BackgroundTaskRegistration
+    Private Shared Function RegisterTimerTrigger(name As String, freshnessMinutes As Integer, oneShot As Boolean, Optional condition As Background.SystemCondition = Nothing) As Background.BackgroundTaskRegistration
+        vblib.DumpCurrMethod()
 
         Try
             Dim builder As New Background.BackgroundTaskBuilder
@@ -247,6 +298,8 @@ Partial NotInheritable Class App
     Protected Overrides Async Sub OnBackgroundActivated(args As BackgroundActivatedEventArgs)
 
         moTimerDeferal = args.TaskInstance.GetDeferral()
+
+        pkar.InitLib(Nothing, False)
 
         If Not Await CalledFromBackground(args.TaskInstance) Then
             moTimerDeferal.Complete()   ' gdy to byl RemoteSystem, to nie dereferuj
@@ -298,7 +351,7 @@ Partial NotInheritable Class App
             oCalendars = Await oStore.FindAppointmentsAsync(Date.Now, TimeSpan.FromDays(7), oCalOpt)
             If oCalendars Is Nothing Then Return ""
         Catch ex As Exception
-            CrashMessageAdd("@AkcjeSnoozeWedleKalendarza part 1", ex.Message)
+            vblib.CrashMessageAdd("@AkcjeSnoozeWedleKalendarza part 1", ex.Message)
             Return ""
         End Try
 
@@ -373,7 +426,7 @@ Partial NotInheritable Class App
 
             If bFirst Then Return ""
         Catch ex As Exception
-            CrashMessageAdd("@AkcjeSnoozeWedleKalendarza For/Next", ex.Message)
+            vblib.CrashMessageAdd("@AkcjeSnoozeWedleKalendarza For/Next", ex.Message)
         End Try
 
         ' mamy juz daty poustawiane, teraz dodaj akcje
@@ -522,7 +575,7 @@ Partial NotInheritable Class App
                 TimeSpan.FromMinutes(vblib.GetSettingsInt("defaultSnoozeTime", 15)), 5)
             Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier().AddToSchedule(oToast)
         Catch ex As Exception
-            CrashMessageAdd("@DodajTestowyToast.Add", ex.Message)
+            vblib.CrashMessageAdd("@DodajTestowyToast.Add", ex.Message)
         End Try
     End Sub
 
@@ -536,7 +589,7 @@ Partial NotInheritable Class App
     End Function
     Public Shared Async Function DodajToast(oItem As vblib.JedenZestaw, bUseCalendar As Boolean, bCanModifyTime As Boolean) As Task
         Dim sXml As String = "<visual><binding template=""ToastGeneric"">" &
-            "<text>" & vblib.GetSettingsString("resToastTitle") & ":</text><text>" & oItem.sNazwaZestawu & "</text></binding></visual>" &
+            "<text>" & GetResManString("resToastTitle") & ":</text><text>" & oItem.sNazwaZestawu & "</text></binding></visual>" &
             "<actions>"
         ' & " (@ " & Date.Now.ToString("MMdd.HH:mm:ss") 
 
@@ -580,7 +633,7 @@ Partial NotInheritable Class App
 
         Dim oDate As DateTimeOffset = oItem.oNextTime
         If oDate < Date.Now.AddMinutes(5) Then
-            CrashMessageAdd("@DodajToast", oItem.sNazwaZestawu & " - zbyt wczesna data")
+            vblib.CrashMessageAdd("@DodajToast", oItem.sNazwaZestawu & " - zbyt wczesna data")
             oDate = Date.Now.AddMinutes(10)
         End If
 
@@ -595,7 +648,7 @@ Partial NotInheritable Class App
             oToast.Id = sTmp
             Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier().AddToSchedule(oToast)
         Catch ex As Exception
-            CrashMessageAdd("@DodajToast.Add", ex.Message)
+            vblib.CrashMessageAdd("@DodajToast.Add", ex.Message)
         End Try
         'Dim oToast = New Windows.UI.Notifications.ScheduledToastNotification(oXml, Date.Now.AddDays(1),
         '        TimeSpan.FromMinutes(GetSettingsInt("defaultSnoozeTime", 15)), 5)
@@ -605,9 +658,13 @@ Partial NotInheritable Class App
     Public Shared Sub UsunToasty()
         Dim oNotifier = Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier()
         Dim oScheduled = oNotifier.GetScheduledToastNotifications()
-        For i = 0 To oScheduled.Count - 1
-            oNotifier.RemoveFromSchedule(oScheduled.Item(i))
-        Next
+        Try
+            For i = 0 To oScheduled.Count - 1
+                oNotifier.RemoveFromSchedule(oScheduled.Item(i))
+            Next
+        Catch ex As Exception
+            vblib.CrashMessageAdd("@UsunToasty removing", ex.Message)
+        End Try
     End Sub
 
 
@@ -617,7 +674,11 @@ Partial NotInheritable Class App
             If oItem.oNextTime.Year > 9000 Then Continue For
             If Not oItem.bEnabled Then Continue For
 
-            Await App.DodajToast(oItem, True, True)
+            Try
+                Await App.DodajToast(oItem, True, True)
+            Catch ex As Exception
+                vblib.CrashMessageAdd("@ZaplanujToasty", ex.Message)
+            End Try
             ' DodajToast(oItem.sNazwaZestawu, oItem.oNextTime.Value.AddMinutes(oItem.iDelayMins))
         Next
         vblib.globalsy.glZestawy.Save() 'Await ZestawySave(False) ' tu przeniesione (wcześniej: w AkcjeWedleKalendarza, bo się iDelay tam zmienia
@@ -653,10 +714,15 @@ Partial NotInheritable Class App
 
         Select Case oTask.Task.Name     '  sTaskname
             Case "WezPigulkeRescheduleToast"
+                'MakeDebugToast("rescheduletoast - start", "")
                 vblib.globalsy.Dawkowanie2NextTime(True)
+                'MakeDebugToast("rescheduletoast - po dawkowanie2next", "")
                 Await ZaplanujToasty()
+                'MakeDebugToast("rescheduletoast - po zaplanuj", "")
                 vblib.globalsy.glZestawy.Save()  'Await ZestawySave(False) ' jakby byly zmiany
+                'MakeDebugToast("rescheduletoast - po Save", "")
                 Await TriggerNocnyReschedule()
+                'MakeDebugToast("rescheduletoast - end", "")
             Case "WezPigulkeCalUpdate"
                 If vblib.GetSettingsBool("generateToasts") Then
                     ' przeliczenie wszystkiego
@@ -719,6 +785,14 @@ Partial NotInheritable Class App
                             vblib.globalsy.glZestawy.Save()
                     End Select
                 End If
+
+            Case "WezPigulkeWycofaniaTrigger"
+                'vblib.CrashMessageAdd("wycoftriggerstart")
+                Await ImportNewDecyzje()
+                'vblib.CrashMessageAdd("wycoftriggerstart po import")
+                Await TriggerWycofaniaReschedule()
+                'vblib.CrashMessageAdd("wycoftriggerstart po resched")
+
             Case Else       ' to moze remote system
                 If vblib.GetSettingsBool("allowRemoteSystem") Then
                     Dim oDetails As AppService.AppServiceTriggerDetails =
@@ -803,13 +877,13 @@ Partial NotInheritable Class App
                         ''oResultMsg.Add("content", oStream.CType(oBuff.ToArray, Byte()))
 
                     Catch ex As Exception
-                        CrashMessageAdd("@OnRequestReceived:getzestawy", ex.Message)
+                        vblib.CrashMessageAdd("@OnRequestReceived:getzestawy", ex.Message)
                     End Try
                 Case Else
                     sResult = "ERROR unknown command"
             End Select
         Catch ex As Exception
-            CrashMessageAdd("@OnRequestReceived outer Select", ex.Message)
+            vblib.CrashMessageAdd("@OnRequestReceived outer Select", ex.Message)
         End Try
 
         ' odsylamy cokolwiek - zeby "tamta strona" cos zobaczyla

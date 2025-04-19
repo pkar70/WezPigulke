@@ -108,57 +108,64 @@ Public Module globalsy
         If bAllSame Then iDTyg = 0
 
         Dim iZaDni As Integer = 0
-        Do
-            Select Case aArr(iDTyg).Substring(0, 1)
-                Case 0  ' w ogóle nie
-                Case 1  ' jedna godzina
-                    If iZaDni = 0 Then
-                        If oDateAlmostNow.Hour > aArr(iDTyg).Substring(2, 2) Then Exit Select
-                        If oDateAlmostNow.Hour = aArr(iDTyg).Substring(2, 2) AndAlso
-                                   oDateAlmostNow.Minute > aArr(iDTyg).Substring(4, 2) Then Exit Select
-                    End If
-                    oItem.oNextOrgTime =
-                                New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day,
-                                         aArr(iDTyg).Substring(2, 2), aArr(iDTyg).Substring(4, 2), 0).AddDays(iZaDni)
-                    Exit Do
-                Case 2  ' 9 i 21
-                    If iZaDni = 0 Then
-                        If oDateAlmostNow.Hour > 21 Then Exit Select
-                        If oDateAlmostNow.Hour = 21 AndAlso oDateAlmostNow.Minute > 0 Then Exit Select
-                        oItem.oNextOrgTime =
-                                    New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, 21, 0, 0).AddDays(iZaDni)
-                        If oDateAlmostNow.Hour > 9 Then Exit Do
-                        If oDateAlmostNow.Hour = 9 AndAlso oDateAlmostNow.Minute > 0 Then Exit Do
-                    End If
-                    oItem.oNextOrgTime =
-                                New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, 9, 0, 0).AddDays(iZaDni)
-                    Exit Do
-                Case 3  ' 8, 16, 23
-                    If iZaDni = 0 Then
-                        If oDateAlmostNow.Hour > 23 Then Exit Select
-                        If oDateAlmostNow.Hour = 23 AndAlso oDateAlmostNow.Minute > 0 Then Exit Select
-                        oItem.oNextOrgTime =
-                                    New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, 23, 0, 0).AddDays(iZaDni)
-                        If oDateAlmostNow.Hour > 16 Then Exit Do
-                        If oDateAlmostNow.Hour = 16 AndAlso oDateAlmostNow.Minute > 0 Then Exit Do
-                        oItem.oNextOrgTime =
-                                    New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, 16, 0, 0).AddDays(iZaDni)
-                        If oDateAlmostNow.Hour > 8 Then Exit Do
-                        If oDateAlmostNow.Hour = 8 AndAlso Date.Now.Minute > 0 Then Exit Do
-                    End If
-                    oItem.oNextOrgTime =
-                                New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, 8, 0, 0).AddDays(iZaDni)
-                    Exit Do
-            End Select
 
-            iZaDni += 1
-            ' jeśli juz jest po ostatnim terminie w dniu, to następny rządek (lub rządek 0)
-            If Not bAllSame Then
-                iDTyg += 1
-                If iDTyg > 6 Then iDTyg = 0
-            End If
-            ' bFirst = False
-        Loop
+        Try
+
+            Do
+                Select Case aArr(iDTyg).Substring(0, 1)
+                    Case 0  ' w ogóle nie
+                    Case 1  ' jedna godzina
+                        If iZaDni = 0 Then
+                            If oDateAlmostNow.Hour > aArr(iDTyg).Substring(2, 2) Then Exit Select
+                            If oDateAlmostNow.Hour = aArr(iDTyg).Substring(2, 2) AndAlso
+                                       oDateAlmostNow.Minute > aArr(iDTyg).Substring(4, 2) Then Exit Select
+                        End If
+                        oItem.oNextOrgTime =
+                                    New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day,
+                                             aArr(iDTyg).Substring(2, 2), aArr(iDTyg).Substring(4, 2), 0).AddDays(iZaDni)
+                        Exit Do
+                    Case 2  ' 9 i 21
+                        If iZaDni = 0 Then
+                            If oDateAlmostNow.Hour > 21 Then Exit Select
+                            If oDateAlmostNow.Hour = 21 AndAlso oDateAlmostNow.Minute > 0 Then Exit Select
+                            oItem.oNextOrgTime =
+                                        New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, 21, 0, 0).AddDays(iZaDni)
+                            If oDateAlmostNow.Hour > 9 Then Exit Do
+                            If oDateAlmostNow.Hour = 9 AndAlso oDateAlmostNow.Minute > 0 Then Exit Do
+                        End If
+                        oItem.oNextOrgTime =
+                                    New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, 9, 0, 0).AddDays(iZaDni)
+                        Exit Do
+                    Case 3  ' 8, 16, 23
+                        If iZaDni = 0 Then
+                            If oDateAlmostNow.Hour > 23 Then Exit Select
+                            If oDateAlmostNow.Hour = 23 AndAlso oDateAlmostNow.Minute > 0 Then Exit Select
+                            oItem.oNextOrgTime =
+                                        New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, 23, 0, 0).AddDays(iZaDni)
+                            If oDateAlmostNow.Hour > 16 Then Exit Do
+                            If oDateAlmostNow.Hour = 16 AndAlso oDateAlmostNow.Minute > 0 Then Exit Do
+                            oItem.oNextOrgTime =
+                                        New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, 16, 0, 0).AddDays(iZaDni)
+                            If oDateAlmostNow.Hour > 8 Then Exit Do
+                            If oDateAlmostNow.Hour = 8 AndAlso Date.Now.Minute > 0 Then Exit Do
+                        End If
+                        oItem.oNextOrgTime =
+                                    New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, 8, 0, 0).AddDays(iZaDni)
+                        Exit Do
+                End Select
+
+                iZaDni += 1
+                ' jeśli juz jest po ostatnim terminie w dniu, to następny rządek (lub rządek 0)
+                If Not bAllSame Then
+                    iDTyg += 1
+                    If iDTyg > 6 Then iDTyg = 0
+                End If
+                ' bFirst = False
+            Loop
+
+        Catch ex As Exception
+            vblib.CrashMessageAdd("CATCH Dawkowanie2NextTime")
+        End Try
 
         oItem.sNextOrgTime = oItem.oNextOrgTime.ToString("yyyyMMddHHmm")
         oItem.oNextTime = oItem.oNextOrgTime

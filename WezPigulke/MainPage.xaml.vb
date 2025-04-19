@@ -12,21 +12,28 @@ Public NotInheritable Class MainPage
 
     Dim mbInLoading As Boolean = True
 
-    Private Sub Roznosci()
-        ' od 14393, czyli od Aski
-        Windows.UI.Notifications.ToastNotificationManager.ConfigureNotificationMirroring(Windows.UI.Notifications.NotificationMirroring.Allowed)
-        ' dla RemoteSystem
-        Dim oCos = Windows.ApplicationModel.Package.Current.Id.FamilyName
-    End Sub
+    'Private Sub Roznosci()
+    '    ' od 14393, czyli od Aski
+    '    Windows.UI.Notifications.ToastNotificationManager.ConfigureNotificationMirroring(Windows.UI.Notifications.NotificationMirroring.Allowed)
+    '    ' dla RemoteSystem
+    '    Dim oCos = Windows.ApplicationModel.Package.Current.Id.FamilyName
+    'End Sub
 
     Private Async Sub Page_Loaded(sender As Object, e As RoutedEventArgs)
         Me.InitDialogs
 
+        'CrashMessageToastInternal("Page_Loaded")
+
         mbInLoading = True  ' zeby nie zapisywal tego co wlasnie odczytal
+
+        AddHandler TryCast(Application.Current, App).UnhandledException, AddressOf GlobalError
+        Await CrashMessageShowAsync()
 
         Await InitLoadPudelka()
         Await InitLoadSubst()
         Await InitLoadZestawy()
+
+        'CrashMessageToastInternal("Page_Loaded1")
 
         Dim bErr As Boolean
         Try
@@ -41,6 +48,7 @@ Public NotInheritable Class MainPage
         End Try
         If bErr Then Await Me.MsgBoxAsync("ERROR TOASTY")
 
+        'CrashMessageToastInternal("Page_Loaded2")
 
         If vblib.globalsy.glZestawy IsNot Nothing Then
             uiList.ItemsSource = From c In vblib.globalsy.glZestawy Order By c.oNextTime
@@ -197,5 +205,9 @@ Public NotInheritable Class MainPage
         Dim sTxt As String = "Details" & vbCrLf & oItem.DumpAsText
 
         Me.MsgBox(sTxt)
+    End Sub
+
+    Private Sub uiWycofania_Click(sender As Object, e As RoutedEventArgs)
+        Me.Navigate(GetType(Wycofania))
     End Sub
 End Class
