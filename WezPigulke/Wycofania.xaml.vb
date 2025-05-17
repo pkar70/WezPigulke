@@ -16,6 +16,16 @@ Public NotInheritable Class Wycofania
 
         uiLista.ItemsSource = vblib.globalsy.glWycofaniaGIF.GetAll.OrderByDescending(Of String)(Function(c) c.data).ToList()
     End Sub
+
+    Private Sub uiDetails_Click(sender As Object, e As RoutedEventArgs)
+        Dim oFE As FrameworkElement = TryCast(sender, FrameworkElement)
+        Dim oItem As vblib.WycofaniaGIF.ImportowanaDecyzja = TryCast(oFE?.DataContext, vblib.WycofaniaGIF.ImportowanaDecyzja)
+
+        If oItem Is Nothing Then Return
+
+        Dim urik As New Uri($"https://rdg.ezdrowie.gov.pl/Decision/Decision?id={oItem.nr}")
+        urik.OpenBrowser
+    End Sub
 End Class
 
 Public Class KonwerterSerii

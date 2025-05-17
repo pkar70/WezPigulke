@@ -60,6 +60,12 @@
 
                         <TextBlock Text="{Binding serie, Mode=OneWay, Converter={StaticResource KonwerterSerii}}" ToolTipService.ToolTip="{Binding serie, Mode=OneWay, Converter={StaticResource KonwerterSerii}}" Grid.Row="2"/>
 
+
+                        <Grid.ContextFlyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem Text="Szczegóły..." Click="uiDetails_Click"/>
+                            </MenuFlyout>
+                        </Grid.ContextFlyout>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
